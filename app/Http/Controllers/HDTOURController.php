@@ -16,6 +16,13 @@ class HDTOURController extends Controller
                   ->orWhere('MaLKH', 'like', "%{$search}%");
         }
         $hdTour = $query->paginate(10);
+        if ($request->ajax() && !$this->wantsJson($request)) {
+            return view('hd-tour.partials.list', compact('hdTour'));
+        }
+        if ($this->wantsJson($request)) {
+            return $this->jsonPaginated($hdTour, 'Danh sách hóa đơn tour');
+        }
+
         return view('hd-tour.index', compact('hdTour', 'search'));
     }
 
@@ -37,13 +44,23 @@ class HDTOURController extends Controller
             'TrangThai' => 'required|boolean',
         ]);
 
-        HDTOUR::create($validated);
+        $hdTour = HDTOUR::create($validated);
+
+        if ($this->wantsJson($request)) {
+            return $this->jsonSuccess($hdTour, 'Hóa đơn tour đã được thêm.', 201);
+        }
+
         return redirect()->route('hd-tour.index')->with('success', 'Hóa đơn tour đã được thêm.');
     }
 
-    public function show($maHD, $maLKH)
+    public function show(Request $request, $maHD, $maLKH)
     {
         $hdTour = HDTOUR::where('MaHD', $maHD)->where('MaLKH', $maLKH)->with(['hoaDon.khachHang', 'lichKhoiHanh.tour'])->firstOrFail();
+
+        if ($this->wantsJson($request)) {
+            return $this->jsonSuccess($hdTour, 'Chi tiết hóa đơn tour');
+        }
+
         return view('hd-tour.show', compact('hdTour'));
     }
 
@@ -65,13 +82,23 @@ class HDTOURController extends Controller
             'TrangThai' => 'required|boolean',
         ]);
         $hdTour->update($validated);
+
+        if ($this->wantsJson($request)) {
+            return $this->jsonSuccess($hdTour, 'Hóa đơn tour đã được cập nhật.');
+        }
+
         return redirect()->route('hd-tour.index')->with('success', 'Hóa đơn tour đã được cập nhật.');
     }
 
-    public function destroy($maHD, $maLKH)
+    public function destroy(Request $request, $maHD, $maLKH)
     {
         $hdTour = HDTOUR::where('MaHD', $maHD)->where('MaLKH', $maLKH)->firstOrFail();
         $hdTour->delete();
+
+        if ($this->wantsJson($request)) {
+            return $this->jsonSuccess(null, 'Hóa đơn tour đã bị xóa.');
+        }
+
         return redirect()->route('hd-tour.index')->with('success', 'Hóa đơn tour đã bị xóa.');
     }
 }

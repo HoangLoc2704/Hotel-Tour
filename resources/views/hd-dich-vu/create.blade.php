@@ -28,7 +28,7 @@
                 <label class="form-label">Hóa đơn*</label>
                 <select name="MaHD" class="form-select" required>
                     <option value="">-- chọn --</option>
-                    @foreach($hoaDon as $hd)
+                    @foreach($hoaDons as $hd)
                         <option value="{{ $hd->MaHD }}" {{ old('MaHD') == $hd->MaHD ? 'selected' : '' }}>{{ $hd->MaHD }}</option>
                     @endforeach
                 </select>
@@ -37,7 +37,7 @@
                 <label class="form-label">Dịch vụ*</label>
                 <select name="MaDV" class="form-select" required>
                     <option value="">-- chọn --</option>
-                    @foreach($dichVu as $dv)
+                    @foreach($dichVus as $dv)
                         <option value="{{ $dv->MaDV }}" {{ old('MaDV') == $dv->MaDV ? 'selected' : '' }}>{{ $dv->TenDV }}</option>
                     @endforeach
                 </select>
@@ -47,8 +47,15 @@
                 <input type="number" name="SoLuong" class="form-control" value="{{ old('SoLuong') }}" required>
             </div>
             <div class="mb-3">
-                <label class="form-label">Đơn giá*</label>
-                <input type="number" step="0.01" name="DonGia" class="form-control" value="{{ old('DonGia') }}" required>
+                <label class="form-label">Tổng tiền</label>
+                <input type="number" step="0.01" name="TongTien" class="form-control" value="{{ old('TongTien') }}">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Trạng thái*</label>
+                <select name="TrangThai" class="form-select" required>
+                    <option value="1" {{ old('TrangThai', 1) == 1 ? 'selected' : '' }}>Hoạt động</option>
+                    <option value="0" {{ old('TrangThai') == 0 ? 'selected' : '' }}>Vô hiệu</option>
+                </select>
             </div>
             <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> Lưu</button>
         </form>

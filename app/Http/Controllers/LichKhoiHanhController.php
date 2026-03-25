@@ -17,6 +17,15 @@ class LichKhoiHanhController extends Controller
             })->orWhere('MaLKH', 'like', "%{$search}%");
         }
         $lichKhoiHanh = $query->paginate(10);
+
+        if ($request->ajax() && !$this->wantsJson($request)) {
+            return view('lich-khoi-hanh.partials.list', compact('lichKhoiHanh'));
+        }
+
+        if ($this->wantsJson($request)) {
+            return $this->jsonPaginated($lichKhoiHanh, 'Danh sách lịch khởi hành');
+        }
+
         return view('lich-khoi-hanh.index', compact('lichKhoiHanh', 'search'));
     }
 
@@ -39,13 +48,23 @@ class LichKhoiHanhController extends Controller
             'PhuongTien' => 'nullable|string|max:100',
         ]);
 
-        LichKhoiHanh::create($validated);
+        $lichKhoiHanh = LichKhoiHanh::create($validated);
+
+        if ($this->wantsJson($request)) {
+            return $this->jsonSuccess($lichKhoiHanh, 'Lịch khởi hành đã được thêm.', 201);
+        }
+
         return redirect()->route('lich-khoi-hanh.index')->with('success', 'Lịch khởi hành đã được thêm.');
     }
 
-    public function show($id)
+    public function show(Request $request, $id)
     {
         $lichKhoiHanh = LichKhoiHanh::with(['tour', 'huongDanVien'])->findOrFail($id);
+
+        if ($this->wantsJson($request)) {
+            return $this->jsonSuccess($lichKhoiHanh, 'Chi tiết lịch khởi hành');
+        }
+
         return view('lich-khoi-hanh.show', compact('lichKhoiHanh'));
     }
 
@@ -71,13 +90,23 @@ class LichKhoiHanhController extends Controller
         ]);
 
         $lichKhoiHanh->update($validated);
+
+        if ($this->wantsJson($request)) {
+            return $this->jsonSuccess($lichKhoiHanh, 'Lịch khởi hành đã được cập nhật.');
+        }
+
         return redirect()->route('lich-khoi-hanh.index')->with('success', 'Lịch khởi hành đã được cập nhật.');
     }
 
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
         $lichKhoiHanh = LichKhoiHanh::findOrFail($id);
         $lichKhoiHanh->delete();
+
+        if ($this->wantsJson($request)) {
+            return $this->jsonSuccess(null, 'Lịch khởi hành đã bị xóa.');
+        }
+
         return redirect()->route('lich-khoi-hanh.index')->with('success', 'Lịch khởi hành đã bị xóa.');
     }
 }

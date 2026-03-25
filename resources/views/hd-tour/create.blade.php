@@ -38,7 +38,7 @@
                 <select name="MaLKH" class="form-select" required>
                     <option value="">-- chọn --</option>
                     @foreach($lichKhoiHanhs as $lkh)
-                        <option value="{{ $lkh->MaLich }}" {{ old('MaLKH') == $lkh->MaLich ? 'selected' : '' }}>{{ $lkh->MaLich }} - {{ $lkh->tour->TenTour ?? 'N/A' }}</option>
+                        <option value="{{ $lkh->MaLKH }}" {{ old('MaLKH') == $lkh->MaLKH ? 'selected' : '' }}>{{ $lkh->MaLKH }} - {{ $lkh->tour->TenTour ?? 'N/A' }}</option>
                     @endforeach
                 </select>
             </div>

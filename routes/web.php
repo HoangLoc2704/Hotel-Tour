@@ -17,7 +17,14 @@ use App\Http\Controllers\HDPhongController;
 use App\Http\Controllers\AuthController;
 
 Route::get('/', [AuthController::class, 'index']);
-
+Route::get('/test-db', function () {
+    try {
+        DB::connection()->getPdo();
+        return "Kết nối DB thành công";
+    } catch (\Exception $e) {
+        return "Lỗi: " . $e->getMessage();
+    }
+});
 // Authentication Routes
 Route::get('/login', [AuthController::class, 'login'])->name('login');
 Route::post('/login', [AuthController::class, 'postLogin'])->name('login');

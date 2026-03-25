@@ -25,10 +25,6 @@
         <form method="POST" action="{{ route('lich-khoi-hanh.store') }}">
             @csrf
             <div class="mb-3">
-                <label class="form-label">Mã lịch*</label>
-                <input type="text" name="MaLich" class="form-control" value="{{ old('MaLich') }}" required>
-            </div>
-            <div class="mb-3">
                 <label class="form-label">Tour*</label>
                 <select name="MaTour" class="form-select" required>
                     <option value="">-- chọn --</option>
@@ -51,8 +47,12 @@
                 <input type="date" name="NgayKhoiHanh" class="form-control" value="{{ old('NgayKhoiHanh') }}" required>
             </div>
             <div class="mb-3">
-                <label class="form-label">Thời gian*</label>
-                <input type="time" name="ThoiGian" class="form-control" value="{{ old('ThoiGian') }}" required>
+                <label class="form-label">Ngày kết thúc</label>
+                <input type="date" name="NgayKetThuc" class="form-control" value="{{ old('NgayKetThuc') }}">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Số chỗ còn lại</label>
+                <input type="number" name="SoChoConLai" class="form-control" value="{{ old('SoChoConLai') }}">
             </div>
             <div class="mb-3">
                 <label class="form-label">Tài xế</label>
@@ -61,13 +61,6 @@
             <div class="mb-3">
                 <label class="form-label">Phương tiện</label>
                 <input type="text" name="PhuongTien" class="form-control" value="{{ old('PhuongTien') }}" placeholder="Nhập phương tiện di chuyển">
-            </div>
-            <div class="mb-3">
-                <label class="form-label">Trạng thái*</label>
-                <select name="TrangThai" class="form-select" required>
-                    <option value="1" {{ old('TrangThai', 1) == 1 ? 'selected' : '' }}>Hoạt động</option>
-                    <option value="0" {{ old('TrangThai') == 0 ? 'selected' : '' }}>Vô hiệu</option>
-                </select>
             </div>
             <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> Lưu</button>
         </form>

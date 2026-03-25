@@ -39,9 +39,5 @@
         <th>Hình ảnh</th>
         <td>{{ $phong->HinhAnh }}</td>
     </tr>
-    <tr>
-        <th>Trạng thái</th>
-        <td>{{ $phong->TrangThai ? 'Hoạt động' : 'Vô hiệu' }}</td>
-    </tr>
 </table>
 @endsection

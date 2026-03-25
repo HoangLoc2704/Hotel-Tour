@@ -15,6 +15,13 @@ class DichVuController extends Controller
             $query->where('TenDV', 'like', "%{$search}%");
         }
         $dichVu = $query->paginate(10);
+        if ($request->ajax() && !$this->wantsJson($request)) {
+            return view('dich-vu.partials.list', compact('dichVu'));
+        }
+        if ($this->wantsJson($request)) {
+            return $this->jsonPaginated($dichVu, 'Danh sách dịch vụ');
+        }
+
         return view('dich-vu.index', compact('dichVu', 'search'));
     }
 
@@ -31,13 +38,23 @@ class DichVuController extends Controller
             'TrangThai' => 'required|boolean',
         ]);
 
-        DichVu::create($validated);
+        $dichVu = DichVu::create($validated);
+
+        if ($this->wantsJson($request)) {
+            return $this->jsonSuccess($dichVu, 'Dịch vụ đã được thêm.', 201);
+        }
+
         return redirect()->route('dich-vu.index')->with('success', 'Dịch vụ đã được thêm.');
     }
 
-    public function show($id)
+    public function show(Request $request, $id)
     {
         $dichVu = DichVu::findOrFail($id);
+
+        if ($this->wantsJson($request)) {
+            return $this->jsonSuccess($dichVu, 'Chi tiết dịch vụ');
+        }
+
         return view('dich-vu.show', compact('dichVu'));
     }
 
@@ -56,13 +73,23 @@ class DichVuController extends Controller
             'TrangThai' => 'required|boolean',
         ]);
         $dichVu->update($validated);
+
+        if ($this->wantsJson($request)) {
+            return $this->jsonSuccess($dichVu, 'Dịch vụ đã được cập nhật.');
+        }
+
         return redirect()->route('dich-vu.index')->with('success', 'Dịch vụ đã được cập nhật.');
     }
 
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
         $dichVu = DichVu::findOrFail($id);
         $dichVu->delete();
+
+        if ($this->wantsJson($request)) {
+            return $this->jsonSuccess(null, 'Dịch vụ đã bị xóa.');
+        }
+
         return redirect()->route('dich-vu.index')->with('success', 'Dịch vụ đã bị xóa.');
     }
 }

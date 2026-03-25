@@ -15,6 +15,11 @@ class LoaiPhongController extends Controller
             $query->where('TenLoai', 'like', "%{$search}%");
         }
         $loaiPhong = $query->paginate(10);
+
+        if ($this->wantsJson($request)) {
+            return $this->jsonPaginated($loaiPhong, 'Danh sách loại phòng');
+        }
+
         return view('loai-phong.index', compact('loaiPhong', 'search'));
     }
 
@@ -29,13 +34,23 @@ class LoaiPhongController extends Controller
             'TenLoai' => 'required|string|max:50',
         ]);
 
-        LoaiPhong::create($validated);
+        $loaiPhong = LoaiPhong::create($validated);
+
+        if ($this->wantsJson($request)) {
+            return $this->jsonSuccess($loaiPhong, 'Loại phòng đã được thêm.', 201);
+        }
+
         return redirect()->route('loai-phong.index')->with('success', 'Loại phòng đã được thêm.');
     }
 
-    public function show($id)
+    public function show(Request $request, $id)
     {
         $loaiPhong = LoaiPhong::findOrFail($id);
+
+        if ($this->wantsJson($request)) {
+            return $this->jsonSuccess($loaiPhong, 'Chi tiết loại phòng');
+        }
+
         return view('loai-phong.show', compact('loaiPhong'));
     }
 
@@ -52,13 +67,23 @@ class LoaiPhongController extends Controller
             'TenLoai' => 'required|string|max:50',
         ]);
         $loaiPhong->update($validated);
+
+        if ($this->wantsJson($request)) {
+            return $this->jsonSuccess($loaiPhong, 'Loại phòng đã được cập nhật.');
+        }
+
         return redirect()->route('loai-phong.index')->with('success', 'Loại phòng đã được cập nhật.');
     }
 
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
         $loaiPhong = LoaiPhong::findOrFail($id);
         $loaiPhong->delete();
+
+        if ($this->wantsJson($request)) {
+            return $this->jsonSuccess(null, 'Loại phòng đã bị xóa.');
+        }
+
         return redirect()->route('loai-phong.index')->with('success', 'Loại phòng đã bị xóa.');
     }
 }

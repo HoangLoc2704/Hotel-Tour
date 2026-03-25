@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Phong;
 use Carbon\CarbonPeriod;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 
 class PhongController extends Controller
@@ -45,6 +46,14 @@ class PhongController extends Controller
             return $room;
         });
 
+        if ($request->ajax() && !$this->wantsJson($request)) {
+            return view('phong.partials.list', compact('phong'));
+        }
+
+        if ($this->wantsJson($request)) {
+            return $this->jsonPaginated($phong, 'Danh sách phòng');
+        }
+
         return view('phong.index', compact('phong', 'search'));
     }
 
@@ -57,22 +66,32 @@ class PhongController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
+            'MaPhong' => 'required|string|max:10|unique:tbl_Phong,MaPhong',
             'TenPhong' => 'required|string|max:50',
             'SoLuongNguoi' => 'required|integer',
             'GiaPhong' => 'required|numeric',
-            'TrangThai' => 'required|boolean',
             'HinhAnh' => 'nullable|string|max:255',
-            'Mota' => 'nullable|string|max:255',
+            'MoTa' => 'nullable|string|max:255',
             'MaLoai' => 'required|exists:tbl_LoaiPhong,MaLoai',
         ]);
 
-        Phong::create($validated);
+        $phong = Phong::create($validated);
+
+        if ($this->wantsJson($request)) {
+            return $this->jsonSuccess($phong, 'Thêm phòng thành công', 201);
+        }
+
         return redirect()->route('phong.index')->with('success', 'Thêm phòng thành công');
     }
 
-    public function show($id)
+    public function show(Request $request, $id)
     {
         $phong = Phong::with('loaiPhong')->findOrFail($id);
+
+        if ($this->wantsJson($request)) {
+            return $this->jsonSuccess($phong, 'Chi tiết phòng');
+        }
+
         return view('phong.show', compact('phong'));
     }
 
@@ -90,20 +109,40 @@ class PhongController extends Controller
             'TenPhong' => 'required|string|max:50',
             'SoLuongNguoi' => 'required|integer',
             'GiaPhong' => 'required|numeric',
-            'TrangThai' => 'required|boolean',
             'HinhAnh' => 'nullable|string|max:255',
-            'Mota' => 'nullable|string|max:255',
+            'MoTa' => 'nullable|string|max:255',
             'MaLoai' => 'required|exists:tbl_LoaiPhong,MaLoai',
         ]);
 
         $phong->update($validated);
+
+        if ($this->wantsJson($request)) {
+            return $this->jsonSuccess($phong, 'Cập nhật phòng thành công');
+        }
+
         return redirect()->route('phong.index')->with('success', 'Cập nhật phòng thành công');
     }
 
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
         $phong = Phong::findOrFail($id);
-        $phong->delete();
-        return redirect()->route('phong.index')->with('success', 'Xóa phòng thành công');
+        try {
+            $phong->delete();
+
+            if ($this->wantsJson($request)) {
+                return $this->jsonSuccess(null, 'Xóa phòng thành công');
+            }
+
+            return redirect()->route('phong.index')->with('success', 'Xóa phòng thành công');
+        } catch (QueryException $e) {
+            if ($this->wantsJson($request)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Không thể xóa phòng vì đang có dữ liệu liên quan.',
+                ], 409);
+            }
+
+            return redirect()->route('phong.index')->with('error', 'Không thể xóa phòng vì đang có dữ liệu liên quan.');
+        }
     }
 }

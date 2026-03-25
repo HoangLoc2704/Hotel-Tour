@@ -27,8 +27,12 @@
                 <td>{{ $hdDichVu->SoLuong }}</td>
             </tr>
             <tr>
-                <th>Đơn giá:</th>
-                <td>{{ number_format($hdDichVu->DonGia, 2) }}</td>
+                <th>Tổng tiền:</th>
+                <td>{{ number_format($hdDichVu->TongTien, 2) }}</td>
+            </tr>
+            <tr>
+                <th>Trạng thái:</th>
+                <td>{{ $hdDichVu->TrangThai ? 'Hoạt động' : 'Vô hiệu' }}</td>
             </tr>
         </table>
     </div>

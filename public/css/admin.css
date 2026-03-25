@@ -1,0 +1,112 @@
+.app-pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 1.5rem;
+}
+
+.app-pagination .pagination {
+    margin-bottom: 0;
+    gap: 0.45rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.app-pagination .page-item {
+    display: flex;
+}
+
+.app-pagination .page-link {
+    min-width: 44px;
+    height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.55rem 0.95rem;
+    border-radius: 12px;
+    border: 1px solid var(--app-border, #d7dee7);
+    background: #fff;
+    color: var(--app-sidebar, #1f2d3d);
+    font-weight: 700;
+    line-height: 1;
+    box-shadow: 0 10px 22px rgba(31, 45, 61, 0.05);
+    transition: all 0.2s ease;
+}
+
+.app-pagination .page-link:hover {
+    background: var(--app-brand-soft, #dff3e7);
+    border-color: rgba(15, 81, 50, 0.24);
+    color: var(--app-brand, #0f5132);
+    transform: translateY(-1px);
+}
+
+.app-pagination .page-item.active .page-link {
+    background: var(--app-brand, #0f5132);
+    border-color: var(--app-brand, #0f5132);
+    color: #fff;
+    box-shadow: 0 12px 24px rgba(15, 81, 50, 0.22);
+}
+
+.app-pagination .page-item.disabled .page-link {
+    background: #f8f9fa;
+    border-color: #e3e8ee;
+    color: var(--app-text-muted, #6c7a89);
+    box-shadow: none;
+}
+
+.app-pagination-card {
+    margin-top: 0;
+    padding: 1rem 1.25rem 1.25rem;
+    border-top: 1px solid #e9ecef;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbfd 100%);
+    border-radius: 0 0 0.75rem 0.75rem;
+}
+
+.js-ajax-list {
+    position: relative;
+}
+
+.js-ajax-list.is-loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.js-ajax-list.is-loading::after {
+    content: 'Đang tải dữ liệu...';
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.72);
+    color: var(--app-brand, #0f5132);
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    z-index: 2;
+}
+
+.room-date-trigger {
+    border: 1px solid #ced4da;
+    background: #fff;
+    color: #0d6efd;
+    width: 34px;
+    height: 34px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.room-date-trigger:hover {
+    background: #f8f9fa;
+}
+
+.flatpickr-day.booked-day,
+.flatpickr-day.booked-day:hover {
+    background: #dc3545;
+    border-color: #dc3545;
+    color: #fff;
+    opacity: 0.65;
+    text-decoration: line-through;
+}

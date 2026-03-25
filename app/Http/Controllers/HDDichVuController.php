@@ -16,6 +16,15 @@ class HDDichVuController extends Controller
                   ->orWhere('MaDV', 'like', "%{$search}%");
         }
         $hdDichVu = $query->paginate(10);
+
+        if ($request->ajax() && !$this->wantsJson($request)) {
+            return view('hd-dich-vu.partials.list', compact('hdDichVu'));
+        }
+
+        if ($this->wantsJson($request)) {
+            return $this->jsonPaginated($hdDichVu, 'Danh sách hóa đơn dịch vụ');
+        }
+
         return view('hd-dich-vu.index', compact('hdDichVu', 'search'));
     }
 
@@ -36,13 +45,23 @@ class HDDichVuController extends Controller
             'TrangThai' => 'required|boolean',
         ]);
 
-        HDDichVu::create($validated);
+        $hdDichVu = HDDichVu::create($validated);
+
+        if ($this->wantsJson($request)) {
+            return $this->jsonSuccess($hdDichVu, 'Hóa đơn dịch vụ đã được thêm.', 201);
+        }
+
         return redirect()->route('hd-dich-vu.index')->with('success', 'Hóa đơn dịch vụ đã được thêm.');
     }
 
-    public function show($maHD, $maDV)
+    public function show(Request $request, $maHD, $maDV)
     {
         $hdDichVu = HDDichVu::where('MaHD', $maHD)->where('MaDV', $maDV)->with(['hoaDon.khachHang', 'dichVu'])->firstOrFail();
+
+        if ($this->wantsJson($request)) {
+            return $this->jsonSuccess($hdDichVu, 'Chi tiết hóa đơn dịch vụ');
+        }
+
         return view('hd-dich-vu.show', compact('hdDichVu'));
     }
 
@@ -63,13 +82,23 @@ class HDDichVuController extends Controller
             'TrangThai' => 'required|boolean',
         ]);
         $hdDichVu->update($validated);
+
+        if ($this->wantsJson($request)) {
+            return $this->jsonSuccess($hdDichVu, 'Hóa đơn dịch vụ đã được cập nhật.');
+        }
+
         return redirect()->route('hd-dich-vu.index')->with('success', 'Hóa đơn dịch vụ đã được cập nhật.');
     }
 
-    public function destroy($maHD, $maDV)
+    public function destroy(Request $request, $maHD, $maDV)
     {
         $hdDichVu = HDDichVu::where('MaHD', $maHD)->where('MaDV', $maDV)->firstOrFail();
         $hdDichVu->delete();
+
+        if ($this->wantsJson($request)) {
+            return $this->jsonSuccess(null, 'Hóa đơn dịch vụ đã bị xóa.');
+        }
+
         return redirect()->route('hd-dich-vu.index')->with('success', 'Hóa đơn dịch vụ đã bị xóa.');
     }
 }

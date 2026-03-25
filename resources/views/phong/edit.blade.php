@@ -26,6 +26,10 @@
             @csrf
             @method('PUT')
             <div class="mb-3">
+                <label class="form-label">Mã phòng</label>
+                <input type="text" class="form-control" value="{{ $phong->MaPhong }}" readonly>
+            </div>
+            <div class="mb-3">
                 <label class="form-label">Tên phòng*</label>
                 <input type="text" name="TenPhong" class="form-control" value="{{ old('TenPhong', $phong->TenPhong) }}" required>
             </div>
@@ -53,13 +57,6 @@
             <div class="mb-3">
                 <label class="form-label">Hình ảnh URL</label>
                 <input type="text" name="HinhAnh" class="form-control" value="{{ old('HinhAnh', $phong->HinhAnh) }}">
-            </div>
-            <div class="mb-3">
-                <label class="form-label">Trạng thái*</label>
-                <select name="TrangThai" class="form-select" required>
-                    <option value="1" {{ old('TrangThai', $phong->TrangThai) == 1 ? 'selected' : '' }}>Hoạt động</option>
-                    <option value="0" {{ old('TrangThai', $phong->TrangThai) == 0 ? 'selected' : '' }}>Vô hiệu</option>
-                </select>
             </div>
             <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> Lưu</button>
         </form>

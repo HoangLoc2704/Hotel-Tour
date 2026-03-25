@@ -10,12 +10,15 @@
     </div>
 </div>
 
-<form method="GET" action="{{ route('dich-vu.index') }}" class="row g-3 mb-4">
-    <div class="col-auto">
-        <input type="text" name="search" class="form-control" placeholder="Tìm dịch vụ" value="{{ request('search') }}">
-    </div>
-    <div class="col-auto">
-        <button type="submit" class="btn btn-secondary"><i class="bi bi-search"></i> Tìm</button>
+<form method="GET" action="{{ route('dich-vu.index') }}" class="row g-3 mb-4 js-ajax-search" data-ajax-container="dich-vu-list">
+        <div class="col-auto">
+            <input type="text" name="search" class="form-control" placeholder="Tìm dịch vụ" value="{{ request('search') }}">
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-secondary"><i class="bi bi-search"></i> Tìm</button>
+        </div>
+        <div class="col-auto">
+            <button type="reset" class="btn btn-outline-secondary js-search-reset">Reset</button>
     </div>
 </form>
 
@@ -23,36 +26,7 @@
     <div class="alert alert-success">{{ session('success') }}</div>
 @endif
 
-<table class="table table-bordered table-striped">
-    <thead>
-        <tr>
-            <th>Mã</th>
-            <th>Tên dịch vụ</th>
-            <th>Giá</th>
-            <th>Trạng thái</th>
-            <th>Tác vụ</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach($dichVu as $dv)
-        <tr>
-            <td>{{ $dv->MaDV }}</td>
-            <td>{{ $dv->TenDV }}</td>
-            <td>{{ number_format($dv->GiaDV,0,',','.') }}</td>
-            <td>{{ $dv->TrangThai ? 'Hoạt động' : 'Vô hiệu' }}</td>
-            <td>
-                <a href="{{ route('dich-vu.edit', $dv->MaDV) }}" class="btn btn-sm btn-primary"><i class="bi bi-pencil"></i></a>
-                <a href="{{ route('dich-vu.show', $dv->MaDV) }}" class="btn btn-sm btn-info"><i class="bi bi-eye"></i></a>
-                <form action="{{ route('dich-vu.destroy', $dv->MaDV) }}" method="POST" class="d-inline" onsubmit="return confirm('Xóa dịch vụ?')">
-                    @csrf
-                    @method('DELETE')
-                    <button type="submit" class="btn btn-sm btn-danger"><i class="bi bi-trash"></i></button>
-                </form>
-            </td>
-        </tr>
-        @endforeach
-    </tbody>
-</table>
-
-{{ $dichVu->withQueryString()->links() }}
+<div class="js-ajax-list" data-ajax-key="dich-vu-list">
+    @include('dich-vu.partials.list')
+</div>
 @endsection

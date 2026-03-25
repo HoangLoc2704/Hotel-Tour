@@ -23,12 +23,20 @@
                 <td>{{ $hdPhong->MaPhong }}</td>
             </tr>
             <tr>
-                <th>Số lượng:</th>
-                <td>{{ $hdPhong->SoLuong }}</td>
+                <th>Ngày nhận phòng:</th>
+                <td>{{ $hdPhong->NgayNhanPhong }}</td>
             </tr>
             <tr>
-                <th>Đơn giá:</th>
-                <td>{{ number_format($hdPhong->DonGia, 2) }}</td>
+                <th>Ngày trả phòng:</th>
+                <td>{{ $hdPhong->NgayTraPhong }}</td>
+            </tr>
+            <tr>
+                <th>Tổng tiền:</th>
+                <td>{{ number_format($hdPhong->TongTien, 2) }}</td>
+            </tr>
+            <tr>
+                <th>Trạng thái:</th>
+                <td>{{ $hdPhong->TrangThai ? 'Hoạt động' : 'Vô hiệu' }}</td>
             </tr>
         </table>
     </div>

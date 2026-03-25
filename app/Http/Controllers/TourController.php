@@ -15,6 +15,13 @@ class TourController extends Controller
             $query->where('TenTour', 'like', "%{$search}%");
         }
         $tours = $query->paginate(10);
+        if ($request->ajax() && !$this->wantsJson($request)) {
+            return view('tour.partials.list', compact('tours'));
+        }
+        if ($this->wantsJson($request)) {
+            return $this->jsonPaginated($tours, 'Danh sách tour');
+        }
+
         return view('tour.index', compact('tours', 'search'));
     }
 
@@ -39,13 +46,23 @@ class TourController extends Controller
             'TrangThai' => 'required|boolean',
         ]);
 
-        Tour::create($validated);
+        $tour = Tour::create($validated);
+
+        if ($this->wantsJson($request)) {
+            return $this->jsonSuccess($tour, 'Thêm tour thành công', 201);
+        }
+
         return redirect()->route('tour.index')->with('success', 'Thêm tour thành công');
     }
 
-    public function show($id)
+    public function show(Request $request, $id)
     {
         $tour = Tour::findOrFail($id);
+
+        if ($this->wantsJson($request)) {
+            return $this->jsonSuccess($tour, 'Chi tiết tour');
+        }
+
         return view('tour.show', compact('tour'));
     }
 
@@ -71,13 +88,23 @@ class TourController extends Controller
             'TrangThai' => 'required|boolean',
         ]);
         $tour->update($validated);
+
+        if ($this->wantsJson($request)) {
+            return $this->jsonSuccess($tour, 'Cập nhật tour thành công');
+        }
+
         return redirect()->route('tour.index')->with('success', 'Cập nhật tour thành công');
     }
 
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
         $tour = Tour::findOrFail($id);
         $tour->delete();
+
+        if ($this->wantsJson($request)) {
+            return $this->jsonSuccess(null, 'Xóa tour thành công');
+        }
+
         return redirect()->route('tour.index')->with('success', 'Xóa tour thành công');
     }
 }

@@ -7,7 +7,7 @@
     </div>
     <div class="col-md-4 text-end">
         <a href="{{ route('lich-khoi-hanh.index') }}" class="btn btn-secondary"><i class="bi bi-arrow-left"></i> Quay lại</a>
-        <a href="{{ route('lich-khoi-hanh.edit', $lichKhoiHanh->MaLich) }}" class="btn btn-warning"><i class="bi bi-pencil"></i> Sửa</a>
+        <a href="{{ route('lich-khoi-hanh.edit', $lichKhoiHanh->MaLKH) }}" class="btn btn-warning"><i class="bi bi-pencil"></i> Sửa</a>
     </div>
 </div>
 
@@ -16,7 +16,7 @@
         <table class="table table-borderless">
             <tr>
                 <th>Mã lịch:</th>
-                <td>{{ $lichKhoiHanh->MaLich }}</td>
+                <td>{{ $lichKhoiHanh->MaLKH }}</td>
             </tr>
             <tr>
                 <th>Tour:</th>
@@ -27,12 +27,24 @@
                 <td>{{ $lichKhoiHanh->NgayKhoiHanh }}</td>
             </tr>
             <tr>
-                <th>Thời gian:</th>
-                <td>{{ $lichKhoiHanh->ThoiGian }}</td>
+                <th>Ngày kết thúc:</th>
+                <td>{{ $lichKhoiHanh->NgayKetThuc }}</td>
             </tr>
             <tr>
-                <th>Trạng thái:</th>
-                <td>{{ $lichKhoiHanh->TrangThai ? 'Hoạt động' : 'Vô hiệu' }}</td>
+                <th>Số chỗ còn lại:</th>
+                <td>{{ $lichKhoiHanh->SoChoConLai }}</td>
+            </tr>
+            <tr>
+                <th>Hướng dẫn viên:</th>
+                <td>{{ $lichKhoiHanh->huongDanVien->TenHDV ?? 'N/A' }}</td>
+            </tr>
+            <tr>
+                <th>Tài xế:</th>
+                <td>{{ $lichKhoiHanh->TaiXe }}</td>
+            </tr>
+            <tr>
+                <th>Phương tiện:</th>
+                <td>{{ $lichKhoiHanh->PhuongTien }}</td>
             </tr>
         </table>
     </div>

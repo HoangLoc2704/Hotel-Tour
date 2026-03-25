@@ -22,6 +22,14 @@ class NhanVienController extends Controller
         }
         
         $nhanVien = $nhanVien->paginate(10);
+
+        if ($request->ajax() && !$this->wantsJson($request)) {
+            return view('nhan-vien.partials.list', compact('nhanVien'));
+        }
+
+        if ($this->wantsJson($request)) {
+            return $this->jsonPaginated($nhanVien, 'Danh sách nhân viên');
+        }
         
         return view('nhan-vien.index', compact('nhanVien', 'search'));
     }
@@ -48,14 +56,23 @@ class NhanVienController extends Controller
         ]);
 
         $validated['MatKhau'] = Hash::make($validated['MatKhau']);
-        NhanVien::create($validated);
+        $nhanVien = NhanVien::create($validated);
+
+        if ($this->wantsJson($request)) {
+            return $this->jsonSuccess($nhanVien, 'Thêm nhân viên thành công!', 201);
+        }
 
         return redirect()->route('nhan-vien.index')->with('success', 'Thêm nhân viên thành công!');
     }
 
-    public function show($id)
+    public function show(Request $request, $id)
     {
         $nhanVien = NhanVien::with('chucVu')->findOrFail($id);
+
+        if ($this->wantsJson($request)) {
+            return $this->jsonSuccess($nhanVien, 'Chi tiết nhân viên');
+        }
+
         return view('nhan-vien.show', compact('nhanVien'));
     }
 
@@ -91,13 +108,21 @@ class NhanVienController extends Controller
 
         $nhanVien->update($validated);
 
+        if ($this->wantsJson($request)) {
+            return $this->jsonSuccess($nhanVien, 'Cập nhật nhân viên thành công!');
+        }
+
         return redirect()->route('nhan-vien.index')->with('success', 'Cập nhật nhân viên thành công!');
     }
 
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
         $nhanVien = NhanVien::findOrFail($id);
         $nhanVien->delete();
+
+        if ($this->wantsJson($request)) {
+            return $this->jsonSuccess(null, 'Xóa nhân viên thành công!');
+        }
 
         return redirect()->route('nhan-vien.index')->with('success', 'Xóa nhân viên thành công!');
     }

@@ -38,8 +38,15 @@
                 <input type="number" name="SoLuong" class="form-control" value="{{ old('SoLuong', $hdDichVu->SoLuong) }}" required>
             </div>
             <div class="mb-3">
-                <label class="form-label">Đơn giá*</label>
-                <input type="number" step="0.01" name="DonGia" class="form-control" value="{{ old('DonGia', $hdDichVu->DonGia) }}" required>
+                <label class="form-label">Tổng tiền</label>
+                <input type="number" step="0.01" name="TongTien" class="form-control" value="{{ old('TongTien', $hdDichVu->TongTien) }}">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Trạng thái*</label>
+                <select name="TrangThai" class="form-select" required>
+                    <option value="1" {{ old('TrangThai', $hdDichVu->TrangThai) == 1 ? 'selected' : '' }}>Hoạt động</option>
+                    <option value="0" {{ old('TrangThai', $hdDichVu->TrangThai) == 0 ? 'selected' : '' }}>Vô hiệu</option>
+                </select>
             </div>
             <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> Lưu</button>
         </form>

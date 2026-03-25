@@ -25,6 +25,10 @@
         <form method="POST" action="{{ route('phong.store') }}">
             @csrf
             <div class="mb-3">
+                <label class="form-label">Mã phòng*</label>
+                <input type="text" name="MaPhong" class="form-control" value="{{ old('MaPhong') }}" maxlength="10" required>
+            </div>
+            <div class="mb-3">
                 <label class="form-label">Tên phòng*</label>
                 <input type="text" name="TenPhong" class="form-control" value="{{ old('TenPhong') }}" required>
             </div>
@@ -52,13 +56,6 @@
             <div class="mb-3">
                 <label class="form-label">Hình ảnh URL</label>
                 <input type="text" name="HinhAnh" class="form-control" value="{{ old('HinhAnh') }}">
-            </div>
-            <div class="mb-3">
-                <label class="form-label">Trạng thái*</label>
-                <select name="TrangThai" class="form-select" required>
-                    <option value="1" selected>Hoạt động</option>
-                    <option value="0">Vô hiệu</option>
-                </select>
             </div>
             <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> Lưu</button>
         </form>

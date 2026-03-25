@@ -4,11 +4,23 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Quản lý khách sạn</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="{{ \App\Helpers\AssetHelper::assetVersion('css/admin.css') }}" rel="stylesheet">
+    <script src="{{ \App\Helpers\AssetHelper::assetVersion('js/admin.js') }}" defer></script>
 
     <style>
+    :root {
+        --app-sidebar: #1f2d3d;
+        --app-sidebar-hover: #293846;
+        --app-brand: #0f5132;
+        --app-brand-soft: #dff3e7;
+        --app-border: #d7dee7;
+        --app-text-muted: #6c7a89;
+    }
+
     body {
         background-color: #f5f7fb;
     }
@@ -20,14 +32,14 @@
     /* SIDEBAR */
     .sidebar {
         width: 260px;
-        background: #1f2d3d;
+        background: var(--app-sidebar);
         height: 100vh;
         color: #c2c7d0;
         overflow-y: auto;
     }
 
     .sidebar-brand {
-        background: #0f5132;
+        background: var(--app-brand);
         padding: 15px;
         font-weight: bold;
         color: #fff;
@@ -55,7 +67,7 @@
     }
 
     .sidebar-item a:hover {
-        background: #293846;
+        background: var(--app-sidebar-hover);
         color: #fff;
     }
 
@@ -128,6 +140,10 @@
 
                 <li class="sidebar-item">
                     <a href="{{ route('nhan-vien.index') }}">Quản lý nhân viên</a>
+                </li>
+
+                <li class="sidebar-item">
+                    <a href="{{ route('huong-dan-vien.index') }}">Quản lý hướng dẫn viên</a>
                 </li>
 
                 <li class="sidebar-header">DANH MỤC</li>
