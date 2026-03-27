@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\LoaiPhongRequest;
 use App\Models\LoaiPhong;
 use Illuminate\Http\Request;
 
@@ -28,11 +29,9 @@ class LoaiPhongController extends Controller
         return view('loai-phong.create');
     }
 
-    public function store(Request $request)
+    public function store(LoaiPhongRequest $request)
     {
-        $validated = $request->validate([
-            'TenLoai' => 'required|string|max:50',
-        ]);
+        $validated = $request->validated();
 
         $loaiPhong = LoaiPhong::create($validated);
 
@@ -60,12 +59,10 @@ class LoaiPhongController extends Controller
         return view('loai-phong.edit', compact('loaiPhong'));
     }
 
-    public function update(Request $request, $id)
+    public function update(LoaiPhongRequest $request, $id)
     {
         $loaiPhong = LoaiPhong::findOrFail($id);
-        $validated = $request->validate([
-            'TenLoai' => 'required|string|max:50',
-        ]);
+        $validated = $request->validated();
         $loaiPhong->update($validated);
 
         if ($this->wantsJson($request)) {

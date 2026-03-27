@@ -2,19 +2,40 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\LichKhoiHanhRequest;
+use App\Models\HuongDanVien;
 use App\Models\LichKhoiHanh;
+use App\Models\Tour;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class LichKhoiHanhController extends Controller
 {
+    private function getSelectOptions(): array
+    {
+        return Cache::remember('lkh_select_options', now()->addMinutes(5), function () {
+            return [
+                'tours' => Tour::select('MaTour', 'TenTour')->get(),
+                'huongDanViens' => HuongDanVien::select('MaHDV', 'TenHDV')->get(),
+            ];
+        });
+    }
+
     public function index(Request $request)
     {
         $search = $request->input('search');
-        $query = LichKhoiHanh::with(['tour', 'huongDanVien']);
+        $query = LichKhoiHanh::query()
+            ->select(['MaLKH', 'MaTour', 'NgayKhoiHanh', 'NgayKetThuc', 'SoChoConLai', 'MaHDV'])
+            ->with([
+                'tour:MaTour,TenTour',
+                'huongDanVien:MaHDV,TenHDV',
+            ]);
         if ($search) {
-            $query->whereHas('tour', function($q) use ($search) {
-                $q->where('TenTour', 'like', "%{$search}%");
-            })->orWhere('MaLKH', 'like', "%{$search}%");
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('tour', function ($tourQuery) use ($search) {
+                    $tourQuery->where('TenTour', 'like', "%{$search}%");
+                })->orWhere('MaLKH', 'like', "%{$search}%");
+            });
         }
         $lichKhoiHanh = $query->paginate(10);
 
@@ -31,22 +52,12 @@ class LichKhoiHanhController extends Controller
 
     public function create()
     {
-        $tours = \App\Models\Tour::all();
-        $huongDanViens = \App\Models\HuongDanVien::all();
-        return view('lich-khoi-hanh.create', compact('tours', 'huongDanViens'));
+        return view('lich-khoi-hanh.create', $this->getSelectOptions());
     }
 
-    public function store(Request $request)
+    public function store(LichKhoiHanhRequest $request)
     {
-        $validated = $request->validate([
-            'MaTour' => 'required|exists:tbl_TOUR,MaTour',
-            'NgayKhoiHanh' => 'required|date',
-            'NgayKetThuc' => 'nullable|date|after_or_equal:NgayKhoiHanh',
-            'SoChoConLai' => 'nullable|integer',
-            'MaHDV' => 'required|exists:tbl_HuongDanVien,MaHDV',
-            'TaiXe' => 'nullable|string|max:100',
-            'PhuongTien' => 'nullable|string|max:100',
-        ]);
+        $validated = $request->validated();
 
         $lichKhoiHanh = LichKhoiHanh::create($validated);
 
@@ -71,23 +82,16 @@ class LichKhoiHanhController extends Controller
     public function edit($id)
     {
         $lichKhoiHanh = LichKhoiHanh::findOrFail($id);
-        $tours = \App\Models\Tour::all();
-        $huongDanViens = \App\Models\HuongDanVien::all();
-        return view('lich-khoi-hanh.edit', compact('lichKhoiHanh', 'tours', 'huongDanViens'));
+        return view('lich-khoi-hanh.edit', array_merge(
+            ['lichKhoiHanh' => $lichKhoiHanh],
+            $this->getSelectOptions()
+        ));
     }
 
-    public function update(Request $request, $id)
+    public function update(LichKhoiHanhRequest $request, $id)
     {
         $lichKhoiHanh = LichKhoiHanh::findOrFail($id);
-        $validated = $request->validate([
-            'MaTour' => 'required|exists:tbl_TOUR,MaTour',
-            'NgayKhoiHanh' => 'required|date',
-            'NgayKetThuc' => 'nullable|date|after_or_equal:NgayKhoiHanh',
-            'SoChoConLai' => 'nullable|integer',
-            'MaHDV' => 'required|exists:tbl_HuongDanVien,MaHDV',
-            'TaiXe' => 'nullable|string|max:100',
-            'PhuongTien' => 'nullable|string|max:100',
-        ]);
+        $validated = $request->validated();
 
         $lichKhoiHanh->update($validated);
 

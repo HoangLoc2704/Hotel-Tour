@@ -47,17 +47,8 @@
 
 <!-- Bảng danh sách nhân viên -->
 <div class="card js-ajax-list" data-ajax-key="nhan-vien-list">
-    <div class="table-responsive">
-        <table class="table table-hover mb-0">
     @include('nhan-vien.partials.list')
 </div>
-
-<!-- Phân trang -->
-@if ($nhanVien->hasPages())
-    <div class="app-pagination">
-        {{ $nhanVien->appends(request()->query())->links() }}
-    </div>
-@endif
 
 <style>
 .table-hover tbody tr:hover {

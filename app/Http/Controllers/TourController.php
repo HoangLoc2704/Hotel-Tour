@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreTourRequest;
+use App\Http\Requests\UpdateTourRequest;
 use App\Models\Tour;
 use Illuminate\Http\Request;
 
@@ -30,21 +32,9 @@ class TourController extends Controller
         return view('tour.create');
     }
 
-    public function store(Request $request)
+    public function store(StoreTourRequest $request)
     {
-        $validated = $request->validate([
-            'MaTour' => 'required|string|max:20|unique:tbl_TOUR',
-            'TenTour' => 'required|string|max:100',
-            'GiaTourNguoiLon' => 'required|numeric',
-            'GiaTourTreEm' => 'required|numeric',
-            'ThoiLuong' => 'required|integer',
-            'DiaDiemKhoiHanh' => 'nullable|string|max:255',
-            'SoLuongKhachToiDa' => 'nullable|integer',
-            'HinhAnh' => 'nullable|string|max:255',
-            'MoTa' => 'nullable|string|max:255',
-            'LichTrinh' => 'nullable|string|max:255',
-            'TrangThai' => 'required|boolean',
-        ]);
+        $validated = $request->validated();
 
         $tour = Tour::create($validated);
 
@@ -72,21 +62,10 @@ class TourController extends Controller
         return view('tour.edit', compact('tour'));
     }
 
-    public function update(Request $request, $id)
+    public function update(UpdateTourRequest $request, $id)
     {
         $tour = Tour::findOrFail($id);
-        $validated = $request->validate([
-            'TenTour' => 'required|string|max:100',
-            'GiaTourNguoiLon' => 'required|numeric',
-            'GiaTourTreEm' => 'required|numeric',
-            'ThoiLuong' => 'required|integer',
-            'DiaDiemKhoiHanh' => 'nullable|string|max:255',
-            'SoLuongKhachToiDa' => 'nullable|integer',
-            'HinhAnh' => 'nullable|string|max:255',
-            'MoTa' => 'nullable|string|max:255',
-            'LichTrinh' => 'nullable|string|max:255',
-            'TrangThai' => 'required|boolean',
-        ]);
+        $validated = $request->validated();
         $tour->update($validated);
 
         if ($this->wantsJson($request)) {

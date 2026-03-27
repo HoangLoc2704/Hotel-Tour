@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\HoaDonRequest;
 use App\Models\HoaDon;
 use Illuminate\Http\Request;
 
@@ -33,14 +34,9 @@ class HoaDonController extends Controller
         return view('hoa-don.create', compact('khachHang'));
     }
 
-    public function store(Request $request)
+    public function store(HoaDonRequest $request)
     {
-        $validated = $request->validate([
-            'MaKH' => 'required|exists:tbl_KhachHang,MaKH',
-            'NgayTao' => 'nullable|date',
-            'ThanhTien' => 'nullable|numeric',
-            'TrangThai' => 'required|boolean',
-        ]);
+        $validated = $request->validated();
 
         if (empty($validated['NgayTao'])) {
             $validated['NgayTao'] = now()->toDateString();
@@ -73,15 +69,10 @@ class HoaDonController extends Controller
         return view('hoa-don.edit', compact('hoaDon', 'khachHang'));
     }
 
-    public function update(Request $request, $id)
+    public function update(HoaDonRequest $request, $id)
     {
         $hoaDon = HoaDon::findOrFail($id);
-        $validated = $request->validate([
-            'MaKH' => 'required|exists:tbl_KhachHang,MaKH',
-            'NgayTao' => 'nullable|date',
-            'ThanhTien' => 'nullable|numeric',
-            'TrangThai' => 'required|boolean',
-        ]);
+        $validated = $request->validated();
 
         $hoaDon->update($validated);
 

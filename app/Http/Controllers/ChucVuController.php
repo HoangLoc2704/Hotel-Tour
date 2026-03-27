@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ChucVuRequest;
 use App\Models\ChucVu;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -35,11 +36,9 @@ class ChucVuController extends Controller
         return view('chuc-vu.create');
     }
 
-    public function store(Request $request): RedirectResponse|JsonResponse
+    public function store(ChucVuRequest $request): RedirectResponse|JsonResponse
     {
-        $validated = $request->validate([
-            'TenCV' => 'required|string|max:20',
-        ]);
+        $validated = $request->validated();
 
         $chucVu = ChucVu::create($validated);
 
@@ -67,12 +66,10 @@ class ChucVuController extends Controller
         return view('chuc-vu.edit', compact('chucVu'));
     }
 
-    public function update(Request $request, $id): RedirectResponse|JsonResponse
+    public function update(ChucVuRequest $request, $id): RedirectResponse|JsonResponse
     {
         $chucVu = ChucVu::findOrFail($id);
-        $validated = $request->validate([
-            'TenCV' => 'required|string|max:20',
-        ]);
+        $validated = $request->validated();
         $chucVu->update($validated);
 
         if ($this->wantsJson($request)) {

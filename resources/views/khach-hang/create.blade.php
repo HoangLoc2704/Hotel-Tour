@@ -23,11 +23,7 @@
 <div class="card">
     <div class="card-body">
         <form method="POST" action="{{ route('khach-hang.store') }}">
-            @csrf
-            <div class="mb-3">
-                <label class="form-label">Tài khoản (user)</label>
-                <input type="text" name="TenTK" class="form-control" value="{{ old('TenTK') }}">
-            </div>
+            @csrf 
             <div class="mb-3">
                 <label class="form-label">Họ và tên*</label>
                 <input type="text" name="TenKH" class="form-control" value="{{ old('TenKH') }}" required>

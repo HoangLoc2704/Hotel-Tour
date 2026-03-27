@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\HuongDanVienRequest;
 use App\Models\HuongDanVien;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
@@ -37,15 +38,9 @@ class HuongDanVienController extends Controller
         return view('huong-dan-vien.create');
     }
 
-    public function store(Request $request)
+    public function store(HuongDanVienRequest $request)
     {
-        $validated = $request->validate([
-            'TenHDV' => 'required|string|max:50',
-            'NgaySinh' => 'nullable|date',
-            'DiaChi' => 'required|string|max:255',
-            'SDT' => 'required|string|max:10',
-            'TrangThai' => 'required|boolean',
-        ]);
+        $validated = $request->validated();
 
         $huongDanVien = HuongDanVien::create($validated);
 
@@ -73,16 +68,10 @@ class HuongDanVienController extends Controller
         return view('huong-dan-vien.edit', compact('huongDanVien'));
     }
 
-    public function update(Request $request, $id)
+    public function update(HuongDanVienRequest $request, $id)
     {
         $huongDanVien = HuongDanVien::findOrFail($id);
-        $validated = $request->validate([
-            'TenHDV' => 'required|string|max:50',
-            'NgaySinh' => 'nullable|date',
-            'DiaChi' => 'required|string|max:255',
-            'SDT' => 'required|string|max:10',
-            'TrangThai' => 'required|boolean',
-        ]);
+        $validated = $request->validated();
 
         $huongDanVien->update($validated);
 

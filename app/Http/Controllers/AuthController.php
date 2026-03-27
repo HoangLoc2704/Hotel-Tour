@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\NhanVien;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Session;
 
@@ -22,7 +23,7 @@ class AuthController extends Controller
         ]);
 
         // Tìm nhân viên theo email
-        $nhanVien = NhanVien::where('Email', $request->email)->first();
+        $nhanVien = NhanVien::with('chucVu')->where('Email', $request->email)->first();
         // Kiểm tra nhân viên tồn tại và mật khẩu đúng
         if ($nhanVien && Hash::check($request->mat_khau, $nhanVien->MatKhau)) {
             // Kiểm tra trạng thái tài khoản
@@ -35,6 +36,7 @@ class AuthController extends Controller
             Session::put('user_name', $nhanVien->TenNV);
             Session::put('user_email', $nhanVien->Email);
             Session::put('user_role', $nhanVien->MaCV);
+            Session::put('user_role_name', $nhanVien->chucVu->TenCV ?? '');
 
             // Chuyển hướng đến trang admin
             return redirect()->route('admin');
@@ -75,5 +77,15 @@ class AuthController extends Controller
         ];
 
         return view('admin', compact('user'));
+    }
+
+    public function testDb()
+    {
+        try {
+            DB::connection()->getPdo();
+            return response('Kết nối DB thành công');
+        } catch (\Exception $e) {
+            return response('Lỗi: ' . $e->getMessage(), 500);
+        }
     }
 }

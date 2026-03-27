@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\DichVuRequest;
 use App\Models\DichVu;
 use Illuminate\Http\Request;
 
@@ -30,13 +31,9 @@ class DichVuController extends Controller
         return view('dich-vu.create');
     }
 
-    public function store(Request $request)
+    public function store(DichVuRequest $request)
     {
-        $validated = $request->validate([
-            'TenDV' => 'required|string|max:50',
-            'GiaDV' => 'nullable|numeric',
-            'TrangThai' => 'required|boolean',
-        ]);
+        $validated = $request->validated();
 
         $dichVu = DichVu::create($validated);
 
@@ -64,14 +61,10 @@ class DichVuController extends Controller
         return view('dich-vu.edit', compact('dichVu'));
     }
 
-    public function update(Request $request, $id)
+    public function update(DichVuRequest $request, $id)
     {
         $dichVu = DichVu::findOrFail($id);
-        $validated = $request->validate([
-            'TenDV' => 'required|string|max:50',
-            'GiaDV' => 'nullable|numeric',
-            'TrangThai' => 'required|boolean',
-        ]);
+        $validated = $request->validated();
         $dichVu->update($validated);
 
         if ($this->wantsJson($request)) {

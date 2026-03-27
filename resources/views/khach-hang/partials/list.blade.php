@@ -2,7 +2,6 @@
     <thead>
         <tr>
             <th>ID</th>
-            <th>Tài khoản</th>
             <th>Họ tên</th>
             <th>SDT</th>
             <th>Email</th>
@@ -14,7 +13,6 @@
         @foreach($khachHang as $kh)
         <tr>
             <td>{{ $kh->MaKH }}</td>
-            <td>{{ $kh->TenTK }}</td>
             <td>{{ $kh->TenKH }}</td>
             <td>{{ $kh->SDT }}</td>
             <td>{{ $kh->Email }}</td>

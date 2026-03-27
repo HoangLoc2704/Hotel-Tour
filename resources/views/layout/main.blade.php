@@ -10,110 +10,6 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="{{ \App\Helpers\AssetHelper::assetVersion('css/admin.css') }}" rel="stylesheet">
     <script src="{{ \App\Helpers\AssetHelper::assetVersion('js/admin.js') }}" defer></script>
-
-    <style>
-    :root {
-        --app-sidebar: #1f2d3d;
-        --app-sidebar-hover: #293846;
-        --app-brand: #0f5132;
-        --app-brand-soft: #dff3e7;
-        --app-border: #d7dee7;
-        --app-text-muted: #6c7a89;
-    }
-
-    body {
-        background-color: #f5f7fb;
-    }
-
-    .wrapper {
-        display: flex;
-    }
-
-    /* SIDEBAR */
-    .sidebar {
-        width: 260px;
-        background: var(--app-sidebar);
-        height: 100vh;
-        color: #c2c7d0;
-        overflow-y: auto;
-    }
-
-    .sidebar-brand {
-        background: var(--app-brand);
-        padding: 15px;
-        font-weight: bold;
-        color: #fff;
-        display: block;
-        text-decoration: none;
-    }
-
-    .sidebar-nav {
-        list-style: none;
-        padding: 0;
-    }
-
-    .sidebar-header {
-        font-size: 12px;
-        padding: 15px 20px 5px;
-        color: #6c757d;
-        text-transform: uppercase;
-    }
-
-    .sidebar-item a {
-        display: block;
-        padding: 10px 20px;
-        color: #c2c7d0;
-        text-decoration: none;
-    }
-
-    .sidebar-item a:hover {
-        background: var(--app-sidebar-hover);
-        color: #fff;
-    }
-
-    /* MAIN */
-    .main {
-        flex: 1;
-    }
-
-    /* NAVBAR */
-    .navbar {
-        background: #ffffff;
-        padding: 12px 20px;
-        border-bottom: 1px solid #dee2e6;
-    }
-
-    /* CARDS */
-    .dashboard-card {
-        border-radius: 12px;
-        padding: 20px;
-        color: #fff;
-    }
-
-    .card-green {
-        background: #28a745;
-    }
-
-    .card-blue {
-        background: #3b7ddd;
-    }
-
-    .card-cyan {
-        background: #17a2b8;
-    }
-
-    .dashboard-title {
-        font-size: 32px;
-        font-weight: 600;
-        color: #3b7ddd;
-    }
-
-    .footer {
-        background: #fff;
-        border-top: 1px solid #dee2e6;
-        padding: 15px;
-    }
-    </style>
 </head>
 
 <body>
@@ -127,6 +23,26 @@
             </a>
 
             <ul class="sidebar-nav">
+                @php
+                $rawRoleName = session('user_role_name', '');
+                $normalizedRole = \Illuminate\Support\Str::of($rawRoleName)
+                ->lower()
+                ->ascii()
+                ->replaceMatches('/[^a-z0-9]+/', '-')
+                ->trim('-')
+                ->toString();
+
+                $roleKey = match ($normalizedRole) {
+                'quan-ly', 'manager' => 'quan-ly',
+                'nhan-vien-le-tan', 'le-tan', 'receptionist' => 'le-tan',
+                'nhan-vien-tour', 'tour', 'tour-staff' => 'nhan-vien-tour',
+                default => $normalizedRole,
+                };
+
+                $isManager = $roleKey === 'quan-ly';
+                $canManageExceptPersonnel = in_array($roleKey, ['quan-ly', 'le-tan'], true);
+                $canAccessTourSchedule = in_array($roleKey, ['quan-ly', 'le-tan', 'nhan-vien-tour'], true);
+                @endphp
 
                 <li class="sidebar-header">HỆ THỐNG</li>
 
@@ -134,6 +50,7 @@
                     <a href="{{ route('admin') }}">Bảng điều khiển</a>
                 </li>
 
+                @if ($isManager)
                 <li class="sidebar-item">
                     <a href="{{ route('chuc-vu.index') }}">Bảng chức vụ</a>
                 </li>
@@ -141,11 +58,12 @@
                 <li class="sidebar-item">
                     <a href="{{ route('nhan-vien.index') }}">Quản lý nhân viên</a>
                 </li>
+                @endif
 
                 <li class="sidebar-item">
                     <a href="{{ route('huong-dan-vien.index') }}">Quản lý hướng dẫn viên</a>
                 </li>
-
+                @if ($canManageExceptPersonnel)
                 <li class="sidebar-header">DANH MỤC</li>
 
                 <li class="sidebar-item">
@@ -159,11 +77,15 @@
                 <li class="sidebar-item">
                     <a href="{{ route('dich-vu.index') }}">Quản lý dịch vụ</a>
                 </li>
+                @endif
 
+                @if ($canAccessTourSchedule)
                 <li class="sidebar-item">
                     <a href="{{ route('tour.index') }}">Quản lý tour du lịch</a>
                 </li>
+                @endif
 
+                @if ($canManageExceptPersonnel)
                 <li class="sidebar-header">KINH DOANH</li>
 
                 <li class="sidebar-item">
@@ -173,11 +95,15 @@
                 <li class="sidebar-item">
                     <a href="{{ route('khach-hang.index') }}">Quản lý khách hàng</a>
                 </li>
+                @endif
 
+                @if ($canAccessTourSchedule)
                 <li class="sidebar-item">
                     <a href="{{ route('lich-khoi-hanh.index') }}">Lịch khởi hành</a>
                 </li>
+                @endif
 
+                @if ($canManageExceptPersonnel)
                 <li class="sidebar-item">
                     <a href="{{ route('hd-tour.index') }}">HD Tour</a>
                 </li>
@@ -189,6 +115,7 @@
                 <li class="sidebar-item">
                     <a href="{{ route('hd-phong.index') }}">HD Phòng</a>
                 </li>
+                @endif
 
             </ul>
         </nav>
@@ -207,17 +134,19 @@
                 </form>
             </nav>
 
-            <!-- Content -->
-            <div class="container-fluid p-4">
-                <div class="content g-4">
-                    @yield('content')
+            <div class="main-body">
+                <!-- Content -->
+                <div class="container-fluid p-4 main-content-scroll">
+                    <div class="content g-4">
+                        @yield('content')
+                    </div>
                 </div>
-            </div>
 
-            <!-- Footer -->
-            <footer class="footer text-center">
-                Quản lý Khách sạn
-            </footer>
+                <!-- Footer -->
+                <footer class="footer text-center">
+                    Quản lý Khách sạn
+                </footer>
+            </div>
 
         </div>
 

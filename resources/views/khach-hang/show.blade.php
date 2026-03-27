@@ -16,10 +16,6 @@
         <td>{{ $khachHang->MaKH }}</td>
     </tr>
     <tr>
-        <th>Tài khoản</th>
-        <td>{{ $khachHang->TenTK }}</td>
-    </tr>
-    <tr>
         <th>Họ tên</th>
         <td>{{ $khachHang->TenKH }}</td>
     </tr>

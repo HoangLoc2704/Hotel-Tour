@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreHDPhongRequest;
+use App\Http\Requests\UpdateHDPhongRequest;
 use App\Models\HDPhong;
 use Illuminate\Http\Request;
 
@@ -35,16 +37,9 @@ class HDPhongController extends Controller
         return view('hd-phong.create', compact('hoaDons', 'phongs'));
     }
 
-    public function store(Request $request)
+    public function store(StoreHDPhongRequest $request)
     {
-        $validated = $request->validate([
-            'MaHD' => 'required|exists:tbl_HoaDon,MaHD',
-            'MaPhong' => 'required|exists:tbl_Phong,MaPhong',
-            'NgayNhanPhong' => 'nullable|date',
-            'NgayTraPhong' => 'nullable|date|after_or_equal:NgayNhanPhong',
-            'TongTien' => 'nullable|numeric',
-            'TrangThai' => 'required|boolean',
-        ]);
+        $validated = $request->validated();
 
         if (!empty($validated['NgayNhanPhong']) && !empty($validated['NgayTraPhong'])) {
             $isConflict = HDPhong::where('MaPhong', $validated['MaPhong'])
@@ -96,15 +91,10 @@ class HDPhongController extends Controller
         return view('hd-phong.edit', compact('hdPhong', 'hoaDons', 'phongs'));
     }
 
-    public function update(Request $request, $maHD, $maPhong)
+    public function update(UpdateHDPhongRequest $request, $maHD, $maPhong)
     {
         $hdPhong = HDPhong::where('MaHD', $maHD)->where('MaPhong', $maPhong)->firstOrFail();
-        $validated = $request->validate([
-            'NgayNhanPhong' => 'nullable|date',
-            'NgayTraPhong' => 'nullable|date|after_or_equal:NgayNhanPhong',
-            'TongTien' => 'nullable|numeric',
-            'TrangThai' => 'required|boolean',
-        ]);
+        $validated = $request->validated();
 
         if (!empty($validated['NgayNhanPhong']) && !empty($validated['NgayTraPhong'])) {
             $isConflict = HDPhong::where('MaPhong', $hdPhong->MaPhong)

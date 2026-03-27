@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreHDTourRequest;
+use App\Http\Requests\UpdateHDTourRequest;
 use App\Models\HDTOUR;
 use Illuminate\Http\Request;
 
@@ -33,16 +35,9 @@ class HDTOURController extends Controller
         return view('hd-tour.create', compact('hoaDons', 'lichKhoiHanhs'));
     }
 
-    public function store(Request $request)
+    public function store(StoreHDTourRequest $request)
     {
-        $validated = $request->validate([
-            'MaHD' => 'required|exists:tbl_HoaDon,MaHD',
-            'MaLKH' => 'required|exists:tbl_LichKhoiHanh,MaLKH',
-            'SoNguoiLon' => 'nullable|integer',
-            'SoTreEm' => 'nullable|integer',
-            'TongTien' => 'nullable|numeric',
-            'TrangThai' => 'required|boolean',
-        ]);
+        $validated = $request->validated();
 
         $hdTour = HDTOUR::create($validated);
 
@@ -72,15 +67,10 @@ class HDTOURController extends Controller
         return view('hd-tour.edit', compact('hdTour', 'hoaDons', 'lichKhoiHanhs'));
     }
 
-    public function update(Request $request, $maHD, $maLKH)
+    public function update(UpdateHDTourRequest $request, $maHD, $maLKH)
     {
         $hdTour = HDTOUR::where('MaHD', $maHD)->where('MaLKH', $maLKH)->firstOrFail();
-        $validated = $request->validate([
-            'SoNguoiLon' => 'nullable|integer',
-            'SoTreEm' => 'nullable|integer',
-            'TongTien' => 'nullable|numeric',
-            'TrangThai' => 'required|boolean',
-        ]);
+        $validated = $request->validated();
         $hdTour->update($validated);
 
         if ($this->wantsJson($request)) {

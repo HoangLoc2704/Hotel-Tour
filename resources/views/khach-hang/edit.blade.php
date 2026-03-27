@@ -30,10 +30,6 @@
                 <input type="text" class="form-control" value="{{ $khachHang->MaKH }}" readonly>
             </div>
             <div class="mb-3">
-                <label class="form-label">Tài khoản</label>
-                <input type="text" name="TenTK" class="form-control" value="{{ old('TenTK', $khachHang->TenTK) }}">
-            </div>
-            <div class="mb-3">
                 <label class="form-label">Họ và tên</label>
                 <input type="text" name="TenKH" class="form-control" value="{{ old('TenKH', $khachHang->TenKH) }}" required>
             </div>

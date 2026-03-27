@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreNhanVienRequest;
+use App\Http\Requests\UpdateNhanVienRequest;
 use App\Models\NhanVien;
 use App\Models\ChucVu;
 use Illuminate\Http\Request;
@@ -40,20 +42,9 @@ class NhanVienController extends Controller
         return view('nhan-vien.create', compact('chucVu'));
     }
 
-    public function store(Request $request)
+    public function store(StoreNhanVienRequest $request)
     {
-        $validated = $request->validate([
-            'TenNV' => 'required|string|max:50',
-            'GioiTinh' => 'required|boolean',
-            'NgaySinh' => 'required|date',
-            'DiaChi' => 'required|string|max:255',
-            'SDT' => 'required|string|max:10',
-            'TenTK' => 'required|string|max:100|unique:tbl_NhanVien',
-            'MatKhau' => 'required|string|min:6',
-            'Email' => 'required|email|unique:tbl_NhanVien',
-            'TrangThai' => 'required|boolean',
-            'MaCV' => 'required|exists:tbl_ChucVu,MaCV',
-        ]);
+        $validated = $request->validated();
 
         $validated['MatKhau'] = Hash::make($validated['MatKhau']);
         $nhanVien = NhanVien::create($validated);
@@ -83,22 +74,11 @@ class NhanVienController extends Controller
         return view('nhan-vien.edit', compact('nhanVien', 'chucVu'));
     }
 
-    public function update(Request $request, $id)
+    public function update(UpdateNhanVienRequest $request, $id)
     {
         $nhanVien = NhanVien::findOrFail($id);
         
-        $validated = $request->validate([
-            'TenNV' => 'required|string|max:50',
-            'GioiTinh' => 'required|boolean',
-            'NgaySinh' => 'required|date',
-            'DiaChi' => 'required|string|max:255',
-            'SDT' => 'required|string|max:10',
-            'TenTK' => 'required|string|max:100|unique:tbl_NhanVien,TenTK,' . $id . ',MaNV',
-            'MatKhau' => 'nullable|string|min:6',
-            'Email' => 'required|email|unique:tbl_NhanVien,Email,' . $id . ',MaNV',
-            'TrangThai' => 'required|boolean',
-            'MaCV' => 'required|exists:tbl_ChucVu,MaCV',
-        ]);
+        $validated = $request->validated();
 
         if (!empty($validated['MatKhau'])) {
             $validated['MatKhau'] = Hash::make($validated['MatKhau']);

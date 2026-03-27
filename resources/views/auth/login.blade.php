@@ -98,7 +98,7 @@
 </head>
 
 <body>
-    <form class="login_form" method="POST" action="{{ route('login') }}">
+    <form class="login_form" method="POST" action="{{ route('login.submit') }}">
         @csrf
 
         <div class="form_heading">Đăng Nhập</div>
@@ -130,6 +130,10 @@
         </div>
 
         <button class="submit" type="submit">Đăng nhập</button>
+
+        <div style="margin-top: 14px; text-align: center;">
+            <a href="{{ route('customer.index') }}" style="font-size: 14px; color: #3b7ddd; text-decoration: none;">Xem trang khách hàng</a>
+        </div>
     </form>
 
     <script src="{{ asset('assets/js/login.js') }}"></script>

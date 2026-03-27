@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StorePhongRequest;
+use App\Http\Requests\UpdatePhongRequest;
 use App\Models\Phong;
 use Carbon\CarbonPeriod;
 use Illuminate\Database\QueryException;
@@ -12,24 +14,29 @@ class PhongController extends Controller
     public function index(Request $request)
     {
         $search = $request->input('search');
-        $phong = Phong::with([
-            'loaiPhong',
+        $phong = Phong::query()
+            ->select(['MaPhong', 'TenPhong', 'SoLuongNguoi', 'GiaPhong', 'HinhAnh', 'MoTa', 'MaLoai'])
+            ->with([
+            'loaiPhong:MaLoai,TenLoai',
             'hdPhongs' => function ($query) {
-                $query->whereNotNull('NgayNhanPhong')
+                $query->select(['MaPhong', 'NgayNhanPhong', 'NgayTraPhong'])
+                    ->whereNotNull('NgayNhanPhong')
                     ->whereNotNull('NgayTraPhong')
                     ->orderBy('NgayNhanPhong', 'desc');
             }
         ]);
         if ($search) {
-            $phong->where('TenPhong', 'like', "%{$search}%")
-                  ->orWhereHas('loaiPhong', function ($query) use ($search) {
-                      $query->where('TenLoai', 'like', "%{$search}%");
-                  });
+            $phong->where(function ($query) use ($search) {
+                $query->where('TenPhong', 'like', "%{$search}%")
+                    ->orWhereHas('loaiPhong', function ($relation) use ($search) {
+                        $relation->where('TenLoai', 'like', "%{$search}%");
+                    });
+            });
         }
         $phong = $phong->paginate(10);
 
         $phong->getCollection()->transform(function ($room) {
-            $bookedDates = [];
+            $bookedDateMap = [];
 
             foreach ($room->hdPhongs as $booking) {
                 if (!$booking->NgayNhanPhong || !$booking->NgayTraPhong) {
@@ -38,11 +45,11 @@ class PhongController extends Controller
 
                 $period = CarbonPeriod::create($booking->NgayNhanPhong, $booking->NgayTraPhong);
                 foreach ($period as $date) {
-                    $bookedDates[] = $date->format('Y-m-d');
+                    $bookedDateMap[$date->format('Y-m-d')] = true;
                 }
             }
 
-            $room->bookedDates = array_values(array_unique($bookedDates));
+            $room->bookedDates = array_keys($bookedDateMap);
             return $room;
         });
 
@@ -59,21 +66,13 @@ class PhongController extends Controller
 
     public function create()
     {
-        $loaiPhong = \App\Models\LoaiPhong::all();
+        $loaiPhong = \App\Models\LoaiPhong::select('MaLoai', 'TenLoai')->get();
         return view('phong.create', compact('loaiPhong'));
     }
 
-    public function store(Request $request)
+    public function store(StorePhongRequest $request)
     {
-        $validated = $request->validate([
-            'MaPhong' => 'required|string|max:10|unique:tbl_Phong,MaPhong',
-            'TenPhong' => 'required|string|max:50',
-            'SoLuongNguoi' => 'required|integer',
-            'GiaPhong' => 'required|numeric',
-            'HinhAnh' => 'nullable|string|max:255',
-            'MoTa' => 'nullable|string|max:255',
-            'MaLoai' => 'required|exists:tbl_LoaiPhong,MaLoai',
-        ]);
+        $validated = $request->validated();
 
         $phong = Phong::create($validated);
 
@@ -98,21 +97,14 @@ class PhongController extends Controller
     public function edit($id)
     {
         $phong = Phong::findOrFail($id);
-        $loaiPhong = \App\Models\LoaiPhong::all();
+        $loaiPhong = \App\Models\LoaiPhong::select('MaLoai', 'TenLoai')->get();
         return view('phong.edit', compact('phong', 'loaiPhong'));
     }
 
-    public function update(Request $request, $id)
+    public function update(UpdatePhongRequest $request, $id)
     {
         $phong = Phong::findOrFail($id);
-        $validated = $request->validate([
-            'TenPhong' => 'required|string|max:50',
-            'SoLuongNguoi' => 'required|integer',
-            'GiaPhong' => 'required|numeric',
-            'HinhAnh' => 'nullable|string|max:255',
-            'MoTa' => 'nullable|string|max:255',
-            'MaLoai' => 'required|exists:tbl_LoaiPhong,MaLoai',
-        ]);
+        $validated = $request->validated();
 
         $phong->update($validated);
 
