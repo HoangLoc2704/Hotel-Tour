@@ -76,6 +76,12 @@ class HoaDonController extends Controller
 
         $hoaDon->update($validated);
 
+        if (array_key_exists('ThanhToan', $validated)) {
+            HoaDon::syncDetailThanhToan((string) $hoaDon->MaHD, (int) $validated['ThanhToan']);
+            HoaDon::recalculateThanhTien((string) $hoaDon->MaHD);
+            $hoaDon->refresh();
+        }
+
         if ($this->wantsJson($request)) {
             return $this->jsonSuccess($hoaDon, 'Hóa đơn đã được cập nhật.');
         }

@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreHDPhongRequest;
 use App\Http\Requests\UpdateHDPhongRequest;
 use App\Models\HDPhong;
+use App\Models\HoaDon;
+use App\Models\Phong;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class HDPhongController extends Controller
@@ -63,7 +66,18 @@ class HDPhongController extends Controller
             }
         }
 
+        $phong = Phong::query()->findOrFail($validated['MaPhong']);
+        $giaPhong = (float) ($phong->GiaPhong ?? 0);
+        $soDem = 1;
+        if (!empty($validated['NgayNhanPhong']) && !empty($validated['NgayTraPhong'])) {
+            $nhan = Carbon::parse($validated['NgayNhanPhong']);
+            $tra = Carbon::parse($validated['NgayTraPhong']);
+            $soDem = max(1, $nhan->diffInDays($tra));
+        }
+        $validated['TongTien'] = $giaPhong * $soDem;
+
         $hdPhong = HDPhong::create($validated);
+        HoaDon::recalculateThanhTien($validated['MaHD']);
 
         if ($this->wantsJson($request)) {
             return $this->jsonSuccess($hdPhong, 'Hóa đơn phòng đã được thêm.', 201);
@@ -122,7 +136,30 @@ class HDPhongController extends Controller
             }
         }
 
-        $hdPhong->update($validated);
+        $maPhongMoi = $hdPhong->MaPhong;
+        $ngayNhan = $validated['NgayNhanPhong'] ?? $hdPhong->NgayNhanPhong;
+        $ngayTra = $validated['NgayTraPhong'] ?? $hdPhong->NgayTraPhong;
+
+        $phong = Phong::query()->findOrFail($maPhongMoi);
+        $giaPhong = (float) ($phong->GiaPhong ?? 0);
+        $soDem = 1;
+        if (!empty($ngayNhan) && !empty($ngayTra)) {
+            $nhan = Carbon::parse($ngayNhan);
+            $tra = Carbon::parse($ngayTra);
+            $soDem = max(1, $nhan->diffInDays($tra));
+        }
+        $validated['TongTien'] = $giaPhong * $soDem;
+
+        HDPhong::query()
+            ->where('MaHD', $maHD)
+            ->where('MaPhong', $maPhong)
+            ->update($validated);
+
+        $hdPhong = HDPhong::where('MaHD', $maHD)
+            ->where('MaPhong', $maPhong)
+            ->firstOrFail();
+
+        HoaDon::recalculateThanhTien($maHD);
 
         if ($this->wantsJson($request)) {
             return $this->jsonSuccess($hdPhong, 'Hóa đơn phòng đã được cập nhật.');
@@ -133,8 +170,12 @@ class HDPhongController extends Controller
 
     public function destroy(Request $request, $maHD, $maPhong)
     {
-        $hdPhong = HDPhong::where('MaHD', $maHD)->where('MaPhong', $maPhong)->firstOrFail();
-        $hdPhong->delete();
+        HDPhong::query()
+            ->where('MaHD', $maHD)
+            ->where('MaPhong', $maPhong)
+            ->delete();
+
+        HoaDon::recalculateThanhTien($maHD);
 
         if ($this->wantsJson($request)) {
             return $this->jsonSuccess(null, 'Hóa đơn phòng đã bị xóa.');

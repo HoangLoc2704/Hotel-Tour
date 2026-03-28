@@ -18,6 +18,7 @@ class HoaDonRequest extends FormRequest
             'NgayTao'   => 'nullable|date',
             'ThanhTien' => 'nullable|numeric',
             'TrangThai' => 'required|boolean',
+            'ThanhToan' => 'required|boolean',
         ];
     }
 }

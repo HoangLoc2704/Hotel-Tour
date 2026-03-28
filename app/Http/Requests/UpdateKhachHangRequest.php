@@ -16,7 +16,6 @@ class UpdateKhachHangRequest extends FormRequest
         $id = $this->route('khach_hang');
 
         return [
-            'TenTK'     => 'nullable|string|max:100|unique:tbl_KhachHang,TenTK,' . $id . ',MaKH',
             'TenKH'     => 'required|string|max:50',
             'GioiTinh'  => 'required|boolean',
             'SDT'       => 'required|string|max:10',

@@ -6,6 +6,7 @@
             <th>Giá NL</th>
             <th>Giá TE</th>
             <th>Thời lượng</th>
+            <th>Địa điểm khởi hành</th>
             <th>Trạng thái</th>
             <th>Tác vụ</th>
         </tr>
@@ -18,8 +19,10 @@
             <td>{{ number_format($tour->GiaTourNguoiLon, 0, ',', '.') }}</td>
             <td>{{ number_format($tour->GiaTourTreEm, 0, ',', '.') }}</td>
             <td>{{ $tour->ThoiLuong }} ngày</td>
+            <td>{{ $tour->DiaDiemKhoiHanh }}</td>
             <td>{{ $tour->TrangThai ? 'Hoạt động' : 'Vô hiệu' }}</td>
             <td>
+                <a href="{{ route('tour.show', $tour->MaTour) }}" class="btn btn-sm btn-info" title="Xem chi tiết"><i class="bi bi-eye"></i> Chi tiết</a>
                 <a href="{{ route('tour.edit', $tour->MaTour) }}" class="btn btn-sm btn-warning"><i class="bi bi-pencil"></i> Sửa</a>
                 <form action="{{ route('tour.destroy', $tour->MaTour) }}" method="POST" class="d-inline" onsubmit="return confirm('Xóa tour này?')">
                     @csrf

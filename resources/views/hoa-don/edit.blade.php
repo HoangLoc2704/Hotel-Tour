@@ -53,6 +53,13 @@
                     <option value="0" {{ old('TrangThai', $hoaDon->TrangThai) == 0 ? 'selected' : '' }}>Vô hiệu</option>
                 </select>
             </div>
+            <div class="mb-3">
+                <label class="form-label">Thanh toán*</label>
+                <select name="ThanhToan" class="form-select" required>
+                    <option value="0" {{ old('ThanhToan', $hoaDon->ThanhToan) == 0 ? 'selected' : '' }}>Chưa thanh toán</option>
+                    <option value="1" {{ old('ThanhToan', $hoaDon->ThanhToan) == 1 ? 'selected' : '' }}>Đã thanh toán</option>
+                </select>
+            </div>
             <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> Lưu</button>
         </form>
     </div>

@@ -33,7 +33,7 @@
     </tr>
     <tr>
         <th>Mô tả</th>
-        <td>{{ $phong->Mota }}</td>
+        <td>{{ $phong->MoTa }}</td>
     </tr>
     <tr>
         <th>Hình ảnh</th>

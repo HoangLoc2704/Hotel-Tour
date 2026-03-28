@@ -19,6 +19,7 @@ class StoreHDDichVuRequest extends FormRequest
             'SoLuong'   => 'nullable|integer',
             'TongTien'  => 'nullable|numeric',
             'TrangThai' => 'required|boolean',
+            'ThanhToan' => 'required|boolean',
         ];
     }
 }

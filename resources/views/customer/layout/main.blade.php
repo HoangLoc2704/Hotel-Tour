@@ -52,6 +52,12 @@
 
                     @if (session()->has('customer_user_id'))
                         <div class="d-flex align-items-center gap-2 customer-auth-box">
+                            <a href="{{ route('customer.invoices') }}" class="btn btn-outline-light btn-sm customer-login-btn d-inline-flex align-items-center" title="Hóa đơn của tôi" aria-label="Hóa đơn của tôi">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+                                    <path d="M8 0a5 5 0 1 0 0 10A5 5 0 0 0 8 0zM4.5 5a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z"/>
+                                    <path d="M14 16s-1-4-6-4-6 4-6 4h12z"/>
+                                </svg>
+                            </a>
                             <span class="customer-auth-name">{{ session('customer_user_name') }}</span>
                             <form method="POST" action="{{ route('customer.logout') }}" class="m-0">
                                 @csrf

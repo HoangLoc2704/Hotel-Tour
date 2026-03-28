@@ -11,7 +11,7 @@ class HDDichVu extends Model
     protected $primaryKey = null;
     public $incrementing = false;
     
-    protected $fillable = ['MaHD', 'MaDV', 'SoLuong', 'TongTien', 'TrangThai'];
+    protected $fillable = ['MaHD', 'MaDV', 'SoLuong', 'TongTien', 'TrangThai', 'ThanhToan'];
     
     public function hoaDon()
     {

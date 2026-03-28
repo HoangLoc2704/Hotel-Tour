@@ -24,7 +24,7 @@
             <div class="row g-3">
                 @forelse ($relatedRooms as $room)
                     <div class="col-md-4">
-                        <a class="text-decoration-none" href="{{ route('customer.room-detail', $room->MaPhong) }}">
+                        <a class="text-decoration-none" href="{{ route('customer.room-detail', $room->TenPhong) }}">
                             <article class="offer-card h-100">
                                 <h3>{{ $room->TenPhong }}</h3>
                                 <div class="price">{{ number_format($room->GiaPhong ?? 0, 0, ',', '.') }} VND / đêm</div>

@@ -20,6 +20,7 @@ class StoreHDPhongRequest extends FormRequest
             'NgayTraPhong'  => 'nullable|date|after_or_equal:NgayNhanPhong',
             'TongTien'      => 'nullable|numeric',
             'TrangThai'     => 'required|boolean',
+            'ThanhToan'     => 'required|boolean',
         ];
     }
 }

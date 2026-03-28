@@ -18,6 +18,7 @@ class UpdateHDTourRequest extends FormRequest
             'SoTreEm'     => 'nullable|integer',
             'TongTien'    => 'nullable|numeric',
             'TrangThai'   => 'required|boolean',
+            'ThanhToan'   => 'required|boolean',
         ];
     }
 }

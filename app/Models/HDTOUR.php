@@ -11,7 +11,7 @@ class HDTOUR extends Model
     protected $primaryKey = null;
     public $incrementing = false;
     
-    protected $fillable = ['MaHD', 'MaLKH', 'SoNguoiLon', 'SoTreEm', 'TongTien', 'TrangThai'];
+    protected $fillable = ['MaHD', 'MaLKH', 'SoNguoiLon', 'SoTreEm', 'TongTien', 'TrangThai', 'ThanhToan'];
     
     public function hoaDon()
     {

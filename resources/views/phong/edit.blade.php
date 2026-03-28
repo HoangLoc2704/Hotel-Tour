@@ -52,7 +52,7 @@
             </div>
             <div class="mb-3">
                 <label class="form-label">Mô tả</label>
-                <textarea name="Mota" class="form-control">{{ old('Mota', $phong->Mota) }}</textarea>
+                <textarea name="MoTa" class="form-control">{{ old('MoTa', $phong->MoTa) }}</textarea>
             </div>
             <div class="mb-3">
                 <label class="form-label">Hình ảnh URL</label>

@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreHDDichVuRequest;
 use App\Http\Requests\UpdateHDDichVuRequest;
+use App\Models\DichVu;
 use App\Models\HDDichVu;
+use App\Models\HoaDon;
 use Illuminate\Http\Request;
 
 class HDDichVuController extends Controller
@@ -41,7 +43,12 @@ class HDDichVuController extends Controller
     {
         $validated = $request->validated();
 
+        $dichVu = DichVu::query()->findOrFail($validated['MaDV']);
+        $soLuong = (int) ($validated['SoLuong'] ?? 1);
+        $validated['TongTien'] = (float) ($dichVu->GiaDV ?? 0) * max(1, $soLuong);
+
         $hdDichVu = HDDichVu::create($validated);
+        HoaDon::recalculateThanhTien($validated['MaHD']);
 
         if ($this->wantsJson($request)) {
             return $this->jsonSuccess($hdDichVu, 'Hóa đơn dịch vụ đã được thêm.', 201);
@@ -73,7 +80,21 @@ class HDDichVuController extends Controller
     {
         $hdDichVu = HDDichVu::where('MaHD', $maHD)->where('MaDV', $maDV)->firstOrFail();
         $validated = $request->validated();
-        $hdDichVu->update($validated);
+
+        $dichVu = DichVu::query()->findOrFail($hdDichVu->MaDV);
+        $soLuong = (int) ($validated['SoLuong'] ?? $hdDichVu->SoLuong ?? 1);
+        $validated['TongTien'] = (float) ($dichVu->GiaDV ?? 0) * max(1, $soLuong);
+
+        HDDichVu::query()
+            ->where('MaHD', $maHD)
+            ->where('MaDV', $maDV)
+            ->update($validated);
+
+        $hdDichVu = HDDichVu::where('MaHD', $maHD)
+            ->where('MaDV', $maDV)
+            ->firstOrFail();
+
+        HoaDon::recalculateThanhTien($maHD);
 
         if ($this->wantsJson($request)) {
             return $this->jsonSuccess($hdDichVu, 'Hóa đơn dịch vụ đã được cập nhật.');
@@ -84,8 +105,12 @@ class HDDichVuController extends Controller
 
     public function destroy(Request $request, $maHD, $maDV)
     {
-        $hdDichVu = HDDichVu::where('MaHD', $maHD)->where('MaDV', $maDV)->firstOrFail();
-        $hdDichVu->delete();
+        HDDichVu::query()
+            ->where('MaHD', $maHD)
+            ->where('MaDV', $maDV)
+            ->delete();
+
+        HoaDon::recalculateThanhTien($maHD);
 
         if ($this->wantsJson($request)) {
             return $this->jsonSuccess(null, 'Hóa đơn dịch vụ đã bị xóa.');

@@ -34,6 +34,10 @@
                 <th>Trạng thái:</th>
                 <td>{{ $hoaDon->TrangThai ? 'Hoạt động' : 'Vô hiệu' }}</td>
             </tr>
+            <tr>
+                <th>Thanh toán:</th>
+                <td>{{ $hoaDon->ThanhToan ? 'Đã thanh toán' : 'Chưa thanh toán' }}</td>
+            </tr>
         </table>
     </div>
 </div>

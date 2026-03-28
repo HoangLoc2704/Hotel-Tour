@@ -38,6 +38,10 @@
                 <th>Trạng thái:</th>
                 <td>{{ $hdTour->TrangThai ? 'Hoạt động' : 'Vô hiệu' }}</td>
             </tr>
+            <tr>
+                <th>Thanh toán:</th>
+                <td>{{ $hdTour->ThanhToan ? 'Đã thanh toán' : 'Chưa thanh toán' }}</td>
+            </tr>
         </table>
     </div>
 </div>

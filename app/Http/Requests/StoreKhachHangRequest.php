@@ -14,7 +14,6 @@ class StoreKhachHangRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'TenTK'     => 'nullable|string|max:100|unique:tbl_KhachHang',
             'TenKH'     => 'required|string|max:50',
             'GioiTinh'  => 'required|boolean',
             'SDT'       => 'required|string|max:10',

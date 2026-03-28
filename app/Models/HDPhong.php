@@ -11,7 +11,7 @@ class HDPhong extends Model
     protected $primaryKey = null;
     public $incrementing = false;
     
-    protected $fillable = ['MaHD', 'MaPhong', 'NgayNhanPhong', 'NgayTraPhong', 'TongTien', 'TrangThai'];
+    protected $fillable = ['MaHD', 'MaPhong', 'NgayNhanPhong', 'NgayTraPhong', 'TongTien', 'TrangThai', 'ThanhToan'];
     
     public function hoaDon()
     {

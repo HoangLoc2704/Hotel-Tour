@@ -6,6 +6,7 @@
             <th>Ngày tạo</th>
             <th>Thành tiền</th>
             <th>Trạng thái</th>
+            <th>Thanh toán</th>
             <th>Tác vụ</th>
         </tr>
     </thead>
@@ -17,6 +18,7 @@
             <td>{{ $hd->NgayTao }}</td>
             <td>{{ number_format($hd->ThanhTien, 0, ',', '.') }}</td>
             <td>{{ $hd->TrangThai ? 'Hoạt động' : 'Vô hiệu' }}</td>
+            <td>{{ $hd->ThanhToan ? 'Đã thanh toán' : 'Chưa thanh toán' }}</td>
             <td>
                 <a href="{{ route('hoa-don.show', $hd->MaHD) }}" class="btn btn-sm btn-info"><i class="bi bi-eye"></i> Xem</a>
                 <a href="{{ route('hoa-don.edit', $hd->MaHD) }}" class="btn btn-sm btn-warning"><i class="bi bi-pencil"></i> Sửa</a>

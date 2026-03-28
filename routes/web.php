@@ -23,7 +23,12 @@ Route::get('/customer/booking', [CustomerController::class, 'booking'])->name('c
 Route::get('/customer/login', [CustomerController::class, 'login'])->name('customer.login');
 Route::post('/customer/login', [CustomerController::class, 'submitLogin'])->name('customer.login.submit');
 Route::post('/customer/logout', [CustomerController::class, 'logout'])->name('customer.logout');
-Route::get('/customer/phong/{maPhong}', [CustomerController::class, 'roomDetail'])->name('customer.room-detail');
+Route::get('/customer/invoices', [CustomerController::class, 'invoices'])->name('customer.invoices');
+Route::get('/customer/invoices/{maHD}', [CustomerController::class, 'showInvoice'])->name('customer.invoices.show');
+Route::get('/customer/check-available-rooms', [CustomerController::class, 'checkAvailableRooms'])->name('customer.check-available-rooms');
+Route::get('/customer/get-tour-schedules', [CustomerController::class, 'getTourSchedules'])->name('customer.get-tour-schedules');
+Route::get('/customer/check-payment', [CustomerController::class, 'checkPaymentStatus'])->name('customer.check-payment');
+Route::get('/customer/phong/{tenPhong}', [CustomerController::class, 'roomDetail'])->name('customer.room-detail');
 Route::get('/customer/tour/{maTour}', [CustomerController::class, 'tourDetail'])->name('customer.tour-detail');
 Route::get('/customer/dich-vu/{maDV}', [CustomerController::class, 'serviceDetail'])->name('customer.service-detail');
 Route::post('/customer/book-service', [CustomerController::class, 'storeBooking'])->name('customer.book-service');

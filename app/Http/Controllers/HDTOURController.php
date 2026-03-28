@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreHDTourRequest;
 use App\Http\Requests\UpdateHDTourRequest;
 use App\Models\HDTOUR;
+use App\Models\HoaDon;
+use App\Models\LichKhoiHanh;
 use Illuminate\Http\Request;
 
 class HDTOURController extends Controller
@@ -39,7 +41,15 @@ class HDTOURController extends Controller
     {
         $validated = $request->validated();
 
+        $lich = LichKhoiHanh::query()->with('tour')->findOrFail($validated['MaLKH']);
+        $soNguoiLon = (int) ($validated['SoNguoiLon'] ?? 0);
+        $soTreEm = (int) ($validated['SoTreEm'] ?? 0);
+        $giaNguoiLon = (float) ($lich->tour->GiaTourNguoiLon ?? 0);
+        $giaTreEm = (float) ($lich->tour->GiaTourTreEm ?? 0);
+        $validated['TongTien'] = ($soNguoiLon * $giaNguoiLon) + ($soTreEm * $giaTreEm);
+
         $hdTour = HDTOUR::create($validated);
+        HoaDon::recalculateThanhTien($validated['MaHD']);
 
         if ($this->wantsJson($request)) {
             return $this->jsonSuccess($hdTour, 'Hóa đơn tour đã được thêm.', 201);
@@ -71,7 +81,24 @@ class HDTOURController extends Controller
     {
         $hdTour = HDTOUR::where('MaHD', $maHD)->where('MaLKH', $maLKH)->firstOrFail();
         $validated = $request->validated();
-        $hdTour->update($validated);
+
+        $lich = LichKhoiHanh::query()->with('tour')->findOrFail($hdTour->MaLKH);
+        $soNguoiLon = (int) ($validated['SoNguoiLon'] ?? $hdTour->SoNguoiLon ?? 0);
+        $soTreEm = (int) ($validated['SoTreEm'] ?? $hdTour->SoTreEm ?? 0);
+        $giaNguoiLon = (float) ($lich->tour->GiaTourNguoiLon ?? 0);
+        $giaTreEm = (float) ($lich->tour->GiaTourTreEm ?? 0);
+        $validated['TongTien'] = ($soNguoiLon * $giaNguoiLon) + ($soTreEm * $giaTreEm);
+
+        HDTOUR::query()
+            ->where('MaHD', $maHD)
+            ->where('MaLKH', $maLKH)
+            ->update($validated);
+
+        $hdTour = HDTOUR::where('MaHD', $maHD)
+            ->where('MaLKH', $maLKH)
+            ->firstOrFail();
+
+        HoaDon::recalculateThanhTien($maHD);
 
         if ($this->wantsJson($request)) {
             return $this->jsonSuccess($hdTour, 'Hóa đơn tour đã được cập nhật.');
@@ -82,8 +109,12 @@ class HDTOURController extends Controller
 
     public function destroy(Request $request, $maHD, $maLKH)
     {
-        $hdTour = HDTOUR::where('MaHD', $maHD)->where('MaLKH', $maLKH)->firstOrFail();
-        $hdTour->delete();
+        HDTOUR::query()
+            ->where('MaHD', $maHD)
+            ->where('MaLKH', $maLKH)
+            ->delete();
+
+        HoaDon::recalculateThanhTien($maHD);
 
         if ($this->wantsJson($request)) {
             return $this->jsonSuccess(null, 'Hóa đơn tour đã bị xóa.');

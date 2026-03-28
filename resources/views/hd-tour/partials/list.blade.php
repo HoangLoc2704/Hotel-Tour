@@ -7,6 +7,8 @@
                 <th>Số người lớn</th>
                 <th>Số trẻ em</th>
                 <th>Tổng tiền</th>
+                <th>Trạng thái</th>
+                <th>Thanh toán</th>
                 <th>Hành động</th>
             </tr>
         </thead>
@@ -18,6 +20,8 @@
                 <td>{{ $ht->SoNguoiLon }}</td>
                 <td>{{ $ht->SoTreEm }}</td>
                 <td>{{ number_format($ht->TongTien, 2) }}</td>
+                <td>{{ $ht->TrangThai ? 'Hoạt động' : 'Vô hiệu' }}</td>
+                <td>{{ $ht->ThanhToan ? 'Đã thanh toán' : 'Chưa thanh toán' }}</td>
                 <td>
                     <a href="{{ route('hd-tour.show', ['maHD' => $ht->MaHD, 'maLKH' => $ht->MaLKH]) }}" class="btn btn-sm btn-info"><i class="bi bi-eye"></i> Xem</a>
                     <a href="{{ route('hd-tour.edit', ['maHD' => $ht->MaHD, 'maLKH' => $ht->MaLKH]) }}" class="btn btn-sm btn-warning"><i class="bi bi-pencil"></i> Sửa</a>
@@ -30,7 +34,7 @@
             </tr>
             @empty
             <tr>
-                <td colspan="6" class="text-center">Không có dữ liệu</td>
+                <td colspan="8" class="text-center">Không có dữ liệu</td>
             </tr>
             @endforelse
         </tbody>

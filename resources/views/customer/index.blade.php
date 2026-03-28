@@ -80,7 +80,7 @@
                                 <h3>{{ $phong->TenPhong }}</h3>
                                 <p>{{ $phong->loaiPhong->TenLoai ?? 'Loại phòng tiêu chuẩn' }}</p>
                                 <div class="price">{{ number_format($phong->GiaPhong ?? 0, 0, ',', '.') }} VND / đêm</div>
-                                <a href="{{ route('customer.room-detail', $phong->MaPhong) }}" class="detail-link">Xem chi tiết</a>
+                                <a href="{{ route('customer.room-detail', $phong->TenPhong) }}" class="detail-link">Xem chi tiết</a>
                             </div>
                         </article>
                     </div>

@@ -10,7 +10,7 @@ class KhachHang extends Model
     protected $primaryKey = 'MaKH';
     public $timestamps = false;
     
-    protected $fillable = ['TenTK', 'TenKH', 'GioiTinh', 'SDT', 'MatKhau', 'TrangThai', 'Email'];
+    protected $fillable = ['TenKH', 'GioiTinh', 'SDT', 'MatKhau', 'TrangThai', 'Email'];
     
     public function hoaDon()
     {

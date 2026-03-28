@@ -16,7 +16,8 @@ class KhachHangController extends Controller
         $query = KhachHang::query();
         if ($search) {
             $query->where('TenKH', 'like', "%{$search}%")
-                  ->orWhere('TenTK', 'like', "%{$search}%");
+                  ->orWhere('Email', 'like', "%{$search}%")
+                  ->orWhere('SDT', 'like', "%{$search}%");
         }
         $khachHang = $query->paginate(10);
 
