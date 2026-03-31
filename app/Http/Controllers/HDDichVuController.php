@@ -34,8 +34,15 @@ class HDDichVuController extends Controller
 
     public function create()
     {
-        $hoaDons = \App\Models\HoaDon::with('khachHang')->get();
-        $dichVus = \App\Models\DichVu::all();
+        $hoaDons = \App\Models\HoaDon::query()
+            ->select(['MaHD', 'MaKH'])
+            ->with('khachHang:MaKH,TenKH')
+            ->orderByDesc('MaHD')
+            ->get();
+        $dichVus = \App\Models\DichVu::query()
+            ->select(['MaDV', 'TenDV'])
+            ->orderBy('TenDV')
+            ->get();
         return view('hd-dich-vu.create', compact('hoaDons', 'dichVus'));
     }
 
@@ -71,8 +78,15 @@ class HDDichVuController extends Controller
     public function edit($maHD, $maDV)
     {
         $hdDichVu = HDDichVu::where('MaHD', $maHD)->where('MaDV', $maDV)->firstOrFail();
-        $hoaDons = \App\Models\HoaDon::with('khachHang')->get();
-        $dichVus = \App\Models\DichVu::all();
+        $hoaDons = \App\Models\HoaDon::query()
+            ->select(['MaHD', 'MaKH'])
+            ->with('khachHang:MaKH,TenKH')
+            ->orderByDesc('MaHD')
+            ->get();
+        $dichVus = \App\Models\DichVu::query()
+            ->select(['MaDV', 'TenDV'])
+            ->orderBy('TenDV')
+            ->get();
         return view('hd-dich-vu.edit', compact('hdDichVu', 'hoaDons', 'dichVus'));
     }
 

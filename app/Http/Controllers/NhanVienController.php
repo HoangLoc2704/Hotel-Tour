@@ -38,7 +38,10 @@ class NhanVienController extends Controller
 
     public function create()
     {
-        $chucVu = ChucVu::all();
+        $chucVu = ChucVu::query()
+            ->select(['MaCV', 'TenCV'])
+            ->orderBy('TenCV')
+            ->get();
         return view('nhan-vien.create', compact('chucVu'));
     }
 
@@ -70,7 +73,10 @@ class NhanVienController extends Controller
     public function edit($id)
     {
         $nhanVien = NhanVien::findOrFail($id);
-        $chucVu = ChucVu::all();
+        $chucVu = ChucVu::query()
+            ->select(['MaCV', 'TenCV'])
+            ->orderBy('TenCV')
+            ->get();
         return view('nhan-vien.edit', compact('nhanVien', 'chucVu'));
     }
 

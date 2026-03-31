@@ -35,8 +35,15 @@ class HDPhongController extends Controller
 
     public function create()
     {
-        $hoaDons = \App\Models\HoaDon::with('khachHang')->get();
-        $phongs = \App\Models\Phong::all();
+        $hoaDons = \App\Models\HoaDon::query()
+            ->select(['MaHD', 'MaKH'])
+            ->with('khachHang:MaKH,TenKH')
+            ->orderByDesc('MaHD')
+            ->get();
+        $phongs = \App\Models\Phong::query()
+            ->select(['MaPhong', 'TenPhong'])
+            ->orderBy('TenPhong')
+            ->get();
         return view('hd-phong.create', compact('hoaDons', 'phongs'));
     }
 
@@ -100,8 +107,15 @@ class HDPhongController extends Controller
     public function edit($maHD, $maPhong)
     {
         $hdPhong = HDPhong::where('MaHD', $maHD)->where('MaPhong', $maPhong)->firstOrFail();
-        $hoaDons = \App\Models\HoaDon::with('khachHang')->get();
-        $phongs = \App\Models\Phong::all();
+        $hoaDons = \App\Models\HoaDon::query()
+            ->select(['MaHD', 'MaKH'])
+            ->with('khachHang:MaKH,TenKH')
+            ->orderByDesc('MaHD')
+            ->get();
+        $phongs = \App\Models\Phong::query()
+            ->select(['MaPhong', 'TenPhong'])
+            ->orderBy('TenPhong')
+            ->get();
         return view('hd-phong.edit', compact('hdPhong', 'hoaDons', 'phongs'));
     }
 

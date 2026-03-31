@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\HoaDon;
+use App\Models\KhachHang;
 use App\Models\NhanVien;
+use App\Models\Phong;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -76,7 +79,14 @@ class AuthController extends Controller
             'role' => Session::get('user_role')
         ];
 
-        return view('admin', compact('user'));
+        $counts = [
+            'nhan_vien' => NhanVien::count(),
+            'khach_hang' => KhachHang::count(),
+            'phong' => Phong::count(),
+            'hoa_don' => HoaDon::count(),
+        ];
+
+        return view('admin', compact('user', 'counts'));
     }
 
     public function testDb()

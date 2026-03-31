@@ -35,9 +35,9 @@
                                 Dịch vụ
                             </a>
                             <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="{{ route('customer.index') }}#hotel-services">Khách sạn</a></li>
-                                <li><a class="dropdown-item" href="{{ route('customer.index') }}#tour-services">Tour du lịch</a></li>
-                                <li><a class="dropdown-item" href="{{ route('customer.index') }}#addon-services">Dịch vụ đi kèm</a></li>
+                                <li><a class="dropdown-item" href="{{ route('customer.services.hotel') }}">Khách sạn</a></li>
+                                <li><a class="dropdown-item" href="{{ route('customer.services.tour') }}">Tour du lịch</a></li>
+                                <li><a class="dropdown-item" href="{{ route('customer.services.addon') }}">Dịch vụ đi kèm</a></li>
                             </ul>
                         </li>
 

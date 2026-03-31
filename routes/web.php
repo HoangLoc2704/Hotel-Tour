@@ -28,6 +28,9 @@ Route::get('/customer/invoices/{maHD}', [CustomerController::class, 'showInvoice
 Route::get('/customer/check-available-rooms', [CustomerController::class, 'checkAvailableRooms'])->name('customer.check-available-rooms');
 Route::get('/customer/get-tour-schedules', [CustomerController::class, 'getTourSchedules'])->name('customer.get-tour-schedules');
 Route::get('/customer/check-payment', [CustomerController::class, 'checkPaymentStatus'])->name('customer.check-payment');
+Route::get('/customer/services/hotel', [CustomerController::class, 'hotelServices'])->name('customer.services.hotel');
+Route::get('/customer/services/tour', [CustomerController::class, 'tourServices'])->name('customer.services.tour');
+Route::get('/customer/services/addon', [CustomerController::class, 'addonServices'])->name('customer.services.addon');
 Route::get('/customer/phong/{tenPhong}', [CustomerController::class, 'roomDetail'])->name('customer.room-detail');
 Route::get('/customer/tour/{maTour}', [CustomerController::class, 'tourDetail'])->name('customer.tour-detail');
 Route::get('/customer/dich-vu/{maDV}', [CustomerController::class, 'serviceDetail'])->name('customer.service-detail');
@@ -57,35 +60,43 @@ Route::middleware(['auth.check'])->group(function () {
         Route::resource('hoa-don', HoaDonController::class);
         Route::resource('dich-vu', DichVuController::class);
 
-        Route::group(['prefix' => 'hd-dich-vu'], function () {
-            Route::get('/', [HDDichVuController::class, 'index'])->name('hd-dich-vu.index');
-            Route::get('/create', [HDDichVuController::class, 'create'])->name('hd-dich-vu.create');
-            Route::post('/', [HDDichVuController::class, 'store'])->name('hd-dich-vu.store');
-            Route::get('/{maHD}/{maDV}', [HDDichVuController::class, 'show'])->name('hd-dich-vu.show');
-            Route::get('/{maHD}/{maDV}/edit', [HDDichVuController::class, 'edit'])->name('hd-dich-vu.edit');
-            Route::put('/{maHD}/{maDV}', [HDDichVuController::class, 'update'])->name('hd-dich-vu.update');
-            Route::delete('/{maHD}/{maDV}', [HDDichVuController::class, 'destroy'])->name('hd-dich-vu.destroy');
-        });
+        $hdRouteConfigs = [
+            [
+                'prefix' => 'hd-dich-vu',
+                'name' => 'hd-dich-vu',
+                'controller' => HDDichVuController::class,
+                'params' => '{maHD}/{maDV}',
+            ],
+            [
+                'prefix' => 'hd-phong',
+                'name' => 'hd-phong',
+                'controller' => HDPhongController::class,
+                'params' => '{maHD}/{maPhong}',
+            ],
+            [
+                'prefix' => 'hd-tour',
+                'name' => 'hd-tour',
+                'controller' => HDTOURController::class,
+                'params' => '{maHD}/{maLKH}',
+            ],
+        ];
 
-        Route::group(['prefix' => 'hd-phong'], function () {
-            Route::get('/', [HDPhongController::class, 'index'])->name('hd-phong.index');
-            Route::get('/create', [HDPhongController::class, 'create'])->name('hd-phong.create');
-            Route::post('/', [HDPhongController::class, 'store'])->name('hd-phong.store');
-            Route::get('/{maHD}/{maPhong}', [HDPhongController::class, 'show'])->name('hd-phong.show');
-            Route::get('/{maHD}/{maPhong}/edit', [HDPhongController::class, 'edit'])->name('hd-phong.edit');
-            Route::put('/{maHD}/{maPhong}', [HDPhongController::class, 'update'])->name('hd-phong.update');
-            Route::delete('/{maHD}/{maPhong}', [HDPhongController::class, 'destroy'])->name('hd-phong.destroy');
-        });
+        foreach ($hdRouteConfigs as $config) {
+            Route::controller($config['controller'])
+                ->prefix($config['prefix'])
+                ->name($config['name'] . '.')
+                ->group(function () use ($config) {
+                    $params = $config['params'];
 
-        Route::group(['prefix' => 'hd-tour'], function () {
-            Route::get('/', [HDTOURController::class, 'index'])->name('hd-tour.index');
-            Route::get('/create', [HDTOURController::class, 'create'])->name('hd-tour.create');
-            Route::post('/', [HDTOURController::class, 'store'])->name('hd-tour.store');
-            Route::get('/{maHD}/{maLKH}', [HDTOURController::class, 'show'])->name('hd-tour.show');
-            Route::get('/{maHD}/{maLKH}/edit', [HDTOURController::class, 'edit'])->name('hd-tour.edit');
-            Route::put('/{maHD}/{maLKH}', [HDTOURController::class, 'update'])->name('hd-tour.update');
-            Route::delete('/{maHD}/{maLKH}', [HDTOURController::class, 'destroy'])->name('hd-tour.destroy');
-        });
+                    Route::get('/', 'index')->name('index');
+                    Route::get('/create', 'create')->name('create');
+                    Route::post('/', 'store')->name('store');
+                    Route::get('/' . $params, 'show')->name('show');
+                    Route::get('/' . $params . '/edit', 'edit')->name('edit');
+                    Route::put('/' . $params, 'update')->name('update');
+                    Route::delete('/' . $params, 'destroy')->name('destroy');
+                });
+        }
     });
 
     // Tour: chỉ quản lý tour và lịch khởi hành.

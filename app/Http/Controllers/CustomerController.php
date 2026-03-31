@@ -9,6 +9,7 @@ use App\Models\HDPhong;
 use App\Models\HoaDon;
 use App\Models\KhachHang;
 use App\Models\LichKhoiHanh;
+use App\Models\LoaiPhong;
 use App\Models\Phong;
 use App\Models\Tour;
 use Carbon\Carbon;
@@ -31,15 +32,19 @@ class CustomerController extends Controller
             ->limit(6)
             ->get();
 
+        $phongIds = Phong::query()
+            ->selectRaw('MIN(MaPhong) as MaPhong')
+            ->groupBy('TenPhong')
+            ->orderBy('TenPhong')
+            ->limit(6)
+            ->pluck('MaPhong');
+
         $phongs = Phong::query()
-            ->select(['TenPhong', 'GiaPhong', 'HinhAnh', 'MoTa', 'MaLoai'])
+            ->select(['MaPhong', 'TenPhong', 'GiaPhong', 'HinhAnh', 'MoTa', 'MaLoai'])
             ->with('loaiPhong:MaLoai,TenLoai')
+            ->whereIn('MaPhong', $phongIds)
             ->orderBy('TenPhong')
             ->get()
-            ->unique(function ($phong) {
-                return mb_strtolower(trim((string) $phong->TenPhong));
-            })
-            ->take(6)
             ->values();
 
         $tours = Tour::query()
@@ -50,6 +55,154 @@ class CustomerController extends Controller
             ->get();
 
         return view('customer.index', compact('dichVus', 'phongs', 'tours'));
+    }
+
+    public function hotelServices(Request $request): View
+    {
+        $filters = $request->validate([
+            'q' => 'nullable|string|max:100',
+            'ma_loai' => 'nullable|string|max:30',
+            'so_nguoi' => 'nullable|integer|min:1|max:20',
+            'gia_tu' => 'nullable|numeric|min:0',
+            'gia_den' => 'nullable|numeric|min:0',
+        ]);
+
+        $distinctRoomIds = Phong::query()
+            ->selectRaw('MIN(MaPhong)')
+            ->when(!empty($filters['q']), function ($query) use ($filters) {
+                $query->where('TenPhong', 'like', '%' . $filters['q'] . '%');
+            })
+            ->when(!empty($filters['ma_loai']), function ($query) use ($filters) {
+                $query->where('MaLoai', $filters['ma_loai']);
+            })
+            ->when(!empty($filters['so_nguoi']), function ($query) use ($filters) {
+                $query->where('SoLuongNguoi', '>=', (int) $filters['so_nguoi']);
+            })
+            ->when(isset($filters['gia_tu']) && $filters['gia_tu'] !== null, function ($query) use ($filters) {
+                $query->where('GiaPhong', '>=', $filters['gia_tu']);
+            })
+            ->when(isset($filters['gia_den']) && $filters['gia_den'] !== null, function ($query) use ($filters) {
+                $query->where('GiaPhong', '<=', $filters['gia_den']);
+            })
+            ->groupBy('TenPhong');
+
+        $items = Phong::query()
+            ->select(['MaPhong', 'TenPhong', 'SoLuongNguoi', 'GiaPhong', 'HinhAnh', 'MoTa', 'MaLoai'])
+            ->with('loaiPhong:MaLoai,TenLoai')
+            ->whereIn('MaPhong', $distinctRoomIds)
+            ->orderBy('GiaPhong')
+            ->orderBy('TenPhong')
+            ->paginate(12)
+            ->withQueryString();
+
+        $roomTypes = LoaiPhong::query()
+            ->select(['MaLoai', 'TenLoai'])
+            ->orderBy('TenLoai')
+            ->get();
+
+        return view('customer.service-catalog', [
+            'category' => 'hotel',
+            'title' => 'Khách sạn',
+            'subtitle' => 'Lọc nhanh theo loại phòng, sức chứa và mức giá phù hợp nhu cầu.',
+            'items' => $items,
+            'filters' => $filters,
+            'roomTypes' => $roomTypes,
+        ]);
+    }
+
+    public function tourServices(Request $request): View
+    {
+        $filters = $request->validate([
+            'q' => 'nullable|string|max:100',
+            'dia_diem' => 'nullable|string|max:100',
+            'thoi_luong_tu' => 'nullable|integer|min:1|max:30',
+            'thoi_luong_den' => 'nullable|integer|min:1|max:30',
+            'gia_tu' => 'nullable|numeric|min:0',
+            'gia_den' => 'nullable|numeric|min:0',
+        ]);
+
+        $query = Tour::query()
+            ->select(['MaTour', 'TenTour', 'GiaTourNguoiLon', 'GiaTourTreEm', 'ThoiLuong', 'DiaDiemKhoiHanh', 'HinhAnh', 'MoTa'])
+            ->where('TrangThai', 1);
+
+        if (!empty($filters['q'])) {
+            $query->where('TenTour', 'like', '%' . $filters['q'] . '%');
+        }
+        if (!empty($filters['dia_diem'])) {
+            $query->where('DiaDiemKhoiHanh', $filters['dia_diem']);
+        }
+        if (!empty($filters['thoi_luong_tu'])) {
+            $query->where('ThoiLuong', '>=', (int) $filters['thoi_luong_tu']);
+        }
+        if (!empty($filters['thoi_luong_den'])) {
+            $query->where('ThoiLuong', '<=', (int) $filters['thoi_luong_den']);
+        }
+        if (isset($filters['gia_tu']) && $filters['gia_tu'] !== null) {
+            $query->where('GiaTourNguoiLon', '>=', $filters['gia_tu']);
+        }
+        if (isset($filters['gia_den']) && $filters['gia_den'] !== null) {
+            $query->where('GiaTourNguoiLon', '<=', $filters['gia_den']);
+        }
+
+        $items = $query
+            ->orderBy('GiaTourNguoiLon')
+            ->orderBy('TenTour')
+            ->paginate(12)
+            ->withQueryString();
+
+        $destinations = Tour::query()
+            ->where('TrangThai', 1)
+            ->whereNotNull('DiaDiemKhoiHanh')
+            ->where('DiaDiemKhoiHanh', '<>', '')
+            ->distinct()
+            ->orderBy('DiaDiemKhoiHanh')
+            ->pluck('DiaDiemKhoiHanh');
+
+        return view('customer.service-catalog', [
+            'category' => 'tour',
+            'title' => 'Tour du lịch',
+            'subtitle' => 'Khám phá tour theo điểm khởi hành, thời lượng và tầm giá mong muốn.',
+            'items' => $items,
+            'filters' => $filters,
+            'destinations' => $destinations,
+        ]);
+    }
+
+    public function addonServices(Request $request): View
+    {
+        $filters = $request->validate([
+            'q' => 'nullable|string|max:100',
+            'gia_tu' => 'nullable|numeric|min:0',
+            'gia_den' => 'nullable|numeric|min:0',
+        ]);
+
+        $query = DichVu::query()
+            ->select(['MaDV', 'TenDV', 'GiaDV', 'TrangThai'])
+            ->where('TrangThai', 1);
+
+        if (!empty($filters['q'])) {
+            $query->where('TenDV', 'like', '%' . $filters['q'] . '%');
+        }
+        if (isset($filters['gia_tu']) && $filters['gia_tu'] !== null) {
+            $query->where('GiaDV', '>=', $filters['gia_tu']);
+        }
+        if (isset($filters['gia_den']) && $filters['gia_den'] !== null) {
+            $query->where('GiaDV', '<=', $filters['gia_den']);
+        }
+
+        $items = $query
+            ->orderBy('GiaDV')
+            ->orderBy('TenDV')
+            ->paginate(12)
+            ->withQueryString();
+
+        return view('customer.service-catalog', [
+            'category' => 'addon',
+            'title' => 'Dịch vụ đi kèm',
+            'subtitle' => 'Lọc nhanh các dịch vụ bổ sung theo tên và ngân sách mong muốn.',
+            'items' => $items,
+            'filters' => $filters,
+        ]);
     }
 
     public function booking(): View
@@ -143,12 +296,7 @@ class CustomerController extends Controller
         ]);
 
         $hoaDonQuery = HoaDon::query()
-            ->with([
-                'hdPhongs.phong:MaPhong,TenPhong',
-                'hdDichVus.dichVu:MaDV,TenDV',
-                'hdTours.lichKhoiHanh:MaLKH,MaTour,NgayKhoiHanh,NgayKetThuc',
-                'hdTours.lichKhoiHanh.tour:MaTour,TenTour',
-            ])
+            ->select(['MaHD', 'MaKH', 'NgayTao', 'ThanhTien', 'TrangThai', 'ThanhToan'])
             ->where('MaKH', $customerId);
 
         if (array_key_exists('thanh_toan', $filters) && $filters['thanh_toan'] !== null) {
@@ -240,11 +388,18 @@ class CustomerController extends Controller
             ->where('TenPhong', $tenPhong)
             ->firstOrFail();
 
-        $relatedRooms = Phong::query()
-            ->select(['TenPhong', 'GiaPhong'])
+        $relatedRoomIds = Phong::query()
+            ->selectRaw('MIN(MaPhong) as MaPhong')
             ->where('TenPhong', '<>', $phong->TenPhong)
-            ->orderBy('GiaPhong')
+            ->groupBy('TenPhong')
+            ->orderByRaw('MIN(GiaPhong)')
             ->limit(3)
+            ->pluck('MaPhong');
+
+        $relatedRooms = Phong::query()
+            ->select(['MaPhong', 'TenPhong', 'GiaPhong'])
+            ->whereIn('MaPhong', $relatedRoomIds)
+            ->orderBy('GiaPhong')
             ->get();
 
         return view('customer.room-detail', compact('phong', 'relatedRooms'));
@@ -320,7 +475,7 @@ class CustomerController extends Controller
             'ghi_chu' => 'nullable|string|max:500',
         ];
 
-        // Add conditional validation for dates and service-specific fields
+        // Validate thuộc tính riêng của từng loại dịch vụ
         if ($loaiDichVu === 'phong') {
             $rules['ngay_nhan_phong'] = 'required|date|after_or_equal:today';
             $rules['ngay_tra_phong'] = 'required|date|after:ngay_nhan_phong';
@@ -472,8 +627,6 @@ class CustomerController extends Controller
     /**
      * Check available rooms for date range (AJAX)
      * 
-     * @param Request $request
-     * @return JsonResponse
      */
     public function checkAvailableRooms(Request $request): JsonResponse
     {
@@ -499,10 +652,6 @@ class CustomerController extends Controller
     /**
      * Tìm phòng có mã nhỏ nhất trống trong khoảng ngày nhận/trả
      * 
-     * @param string $tenPhong Tên loại phòng
-     * @param string $ngayNhan Ngày nhận phòng (YYYY-MM-DD)
-     * @param string $ngayTra Ngày trả phòng (YYYY-MM-DD)
-     * @return string|null Mã phòng nhỏ nhất trống, hoặc null nếu không tìm thấy
      */
     private function findSmallestAvailableRoomByDateRange(string $tenPhong, string $ngayNhan, string $ngayTra): ?string
     {
@@ -530,10 +679,6 @@ class CustomerController extends Controller
     /**
      * Get list of available rooms for date range
      * 
-     * @param string $tenPhong Tên loại phòng
-     * @param string $ngayNhan Ngày nhận phòng (YYYY-MM-DD)
-     * @param string $ngayTra Ngày trả phòng (YYYY-MM-DD)
-     * @return array Danh sách mã phòng trống, sắp xếp theo mã
      */
     private function getAvailableRoomsByDateRange(string $tenPhong, string $ngayNhan, string $ngayTra): array
     {
@@ -558,15 +703,9 @@ class CustomerController extends Controller
     /**
      * Check if a specific room is available for date range
      * 
-     * @param string $maPhong Mã phòng
-     * @param string $ngayNhan Ngày nhận phòng (YYYY-MM-DD)
-     * @param string $ngayTra Ngày trả phòng (YYYY-MM-DD)
-     * @return bool True nếu phòng trống, false nếu bị đặt
      */
     private function isRoomAvailable(string $maPhong, string $ngayNhan, string $ngayTra): bool
     {
-        // Overlap rule: [old_checkin, old_checkout) intersects [new_checkin, new_checkout)
-        // to avoid blocking same-day check-out/check-in turnovers.
         $conflict = HDPhong::query()
             ->where('MaPhong', $maPhong)
             ->where('NgayNhanPhong', '<', $ngayTra)
@@ -580,9 +719,6 @@ class CustomerController extends Controller
     /**
      * Kiểm tra biến động số dư tài khoản qua Casso API để xác minh thanh toán.
      * Casso API docs: https://docs.casso.vn
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function checkPaymentStatus(Request $request): JsonResponse
     {

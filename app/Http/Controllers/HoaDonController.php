@@ -30,7 +30,10 @@ class HoaDonController extends Controller
 
     public function create()
     {
-        $khachHang = \App\Models\KhachHang::all();
+        $khachHang = \App\Models\KhachHang::query()
+            ->select(['MaKH', 'TenKH'])
+            ->orderBy('TenKH')
+            ->get();
         return view('hoa-don.create', compact('khachHang'));
     }
 
@@ -65,7 +68,10 @@ class HoaDonController extends Controller
     public function edit($id)
     {
         $hoaDon = HoaDon::findOrFail($id);
-        $khachHang = \App\Models\KhachHang::all();
+        $khachHang = \App\Models\KhachHang::query()
+            ->select(['MaKH', 'TenKH'])
+            ->orderBy('TenKH')
+            ->get();
         return view('hoa-don.edit', compact('hoaDon', 'khachHang'));
     }
 

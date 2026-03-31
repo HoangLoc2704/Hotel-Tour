@@ -8,7 +8,7 @@
         <div class="card dashboard-card card-green">
             <div class="card-body">
                 <h5 class="card-title">Tổng nhân viên</h5>
-                <h3 class="card-text">{{ \App\Models\NhanVien::count() }}</h3>
+                <h3 class="card-text">{{ $counts['nhan_vien'] }}</h3>
             </div>
         </div>
     </div>
@@ -17,7 +17,7 @@
         <div class="card dashboard-card card-blue">
             <div class="card-body">
                 <h5 class="card-title">Tổng khách hàng</h5>
-                <h3 class="card-text">{{ \App\Models\KhachHang::count() }}</h3>
+                <h3 class="card-text">{{ $counts['khach_hang'] }}</h3>
             </div>
         </div>
     </div>
@@ -26,7 +26,7 @@
         <div class="card dashboard-card card-cyan">
             <div class="card-body">
                 <h5 class="card-title">Tổng phòng</h5>
-                <h3 class="card-text">{{ \App\Models\Phong::count() }}</h3>
+                <h3 class="card-text">{{ $counts['phong'] }}</h3>
             </div>
         </div>
     </div>
@@ -35,7 +35,7 @@
         <div class="card dashboard-card card-green">
             <div class="card-body">
                 <h5 class="card-title">Tổng hóa đơn</h5>
-                <h3 class="card-text">{{ \App\Models\HoaDon::count() }}</h3>
+                <h3 class="card-text">{{ $counts['hoa_don'] }}</h3>
             </div>
         </div>
     </div>
