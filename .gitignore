@@ -11,6 +11,8 @@
 /.vscode
 /.zed
 /auth.json
+/vendor
+/node_modules
 
 /public/storage
 
