@@ -1,0 +1,16 @@
+.git
+.gitignore
+.env
+.env.*
+!.env.example
+vendor
+node_modules
+storage/framework
+storage/logs
+storage/pail
+bootstrap/cache
+public/storage
+package-lock.json
+npm-debug.log
+*.log
+*.sql
