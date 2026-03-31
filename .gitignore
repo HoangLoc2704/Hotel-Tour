@@ -12,8 +12,6 @@
 /.zed
 /auth.json
 
-/public/build
-/public/hot
 /public/storage
 
 /storage/pail
