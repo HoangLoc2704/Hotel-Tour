@@ -1,0 +1,24 @@
+{
+	{$CADDY_GLOBAL_OPTIONS:}
+	frankenphp
+}
+
+:{$PORT:80} {
+	root * /app/public
+
+	# Serve static files directly without invoking PHP
+	@static {
+		file
+		not path *.php
+	}
+	handle @static {
+		file_server
+	}
+
+	# Route all other requests through FrankenPHP
+	handle {
+		php_server
+	}
+
+	encode zstd br gzip
+}
