@@ -5,7 +5,12 @@
 @section('content')
     <main class="container py-5">
         <section class="detail-shell mb-4">
-            <div class="detail-media">{{ $phong->TenPhong }}</div>
+            <div class="detail-media">
+                <img
+                    src="{{ asset('anh/' . ($phong->HinhAnh ?: 'PDonNT.jpg')) }}"
+                    alt="{{ $phong->TenPhong }}"
+                >
+            </div>
             <div class="detail-content">
                 <div class="detail-badge">Khách sạn</div>
                 <h1 class="detail-title">{{ $phong->TenPhong }}</h1>
@@ -26,6 +31,13 @@
                     <div class="col-md-4">
                         <a class="text-decoration-none" href="{{ route('customer.room-detail', $room->TenPhong) }}">
                             <article class="offer-card h-100">
+                                <div class="offer-image">
+                                    <img
+                                        src="{{ asset('anh/' . ($room->HinhAnh ?: 'PDonNT.jpg')) }}"
+                                        alt="{{ $room->TenPhong }}"
+                                        loading="lazy"
+                                    >
+                                </div>
                                 <h3>{{ $room->TenPhong }}</h3>
                                 <div class="price">{{ number_format($room->GiaPhong ?? 0, 0, ',', '.') }} VND / đêm</div>
                             </article>

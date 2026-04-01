@@ -75,7 +75,13 @@
                 @forelse ($phongs as $phong)
                     <div class="col-md-6 col-lg-4">
                         <article class="offer-card h-100">
-                            <div class="offer-image">{{ $phong->TenPhong }}</div>
+                            <div class="offer-image">
+                                <img
+                                    src="{{ asset('anh/' . ($phong->HinhAnh ?: 'PDonNT.jpg')) }}"
+                                    alt="{{ $phong->TenPhong }}"
+                                    loading="lazy"
+                                >
+                            </div>
                             <div class="offer-body">
                                 <h3>{{ $phong->TenPhong }}</h3>
                                 <p>{{ $phong->loaiPhong->TenLoai ?? 'Loại phòng tiêu chuẩn' }}</p>

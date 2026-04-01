@@ -399,7 +399,7 @@ class CustomerController extends Controller
             ->pluck('MaPhong');
 
         $relatedRooms = Phong::query()
-            ->select(['MaPhong', 'TenPhong', 'GiaPhong'])
+            ->select(['MaPhong', 'TenPhong', 'GiaPhong', 'HinhAnh'])
             ->whereIn('MaPhong', $relatedRoomIds)
             ->orderBy('GiaPhong')
             ->get();

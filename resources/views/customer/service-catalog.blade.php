@@ -80,7 +80,13 @@
                             <div class="col-md-6 col-lg-4">
                                 @if ($category === 'hotel')
                                     <article class="offer-card h-100">
-                                        <div class="offer-image">{{ $item->TenPhong }}</div>
+                                        <div class="offer-image">
+                                            <img
+                                                src="{{ asset('anh/' . ($item->HinhAnh ?: 'PDonNT.jpg')) }}"
+                                                alt="{{ $item->TenPhong }}"
+                                                loading="lazy"
+                                            >
+                                        </div>
                                         <div class="offer-body">
                                             <h3>{{ $item->TenPhong }}</h3>
                                             <p>{{ $item->loaiPhong->TenLoai ?? 'Loại phòng tiêu chuẩn' }} · {{ (int) $item->SoLuongNguoi }} người</p>
