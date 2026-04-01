@@ -18,6 +18,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Session;
 use Illuminate\View\View;
 
@@ -716,9 +717,72 @@ class CustomerController extends Controller
         return !$conflict;
     }
 
+    public function sepayWebhook(Request $request): JsonResponse
+    {
+        $configuredApiKey = (string) env('SEPAY_WEBHOOK_API_KEY', '');
+
+        if ($configuredApiKey !== '') {
+            $providedApiKey = (string) ($request->header('Authorization')
+                ?: $request->header('X-API-KEY')
+                ?: $request->header('X-SePay-Api-Key')
+                ?: $request->input('api_key')
+                ?: $request->input('apiKey'));
+
+            $providedApiKey = Str::replaceFirst('Bearer ', '', trim($providedApiKey));
+
+            if (!hash_equals($configuredApiKey, $providedApiKey)) {
+                return response()->json([
+                    'ok' => false,
+                    'message' => 'Unauthorized webhook request.',
+                ], 401);
+            }
+        }
+
+        $payload = $request->all();
+
+        $record = [
+            'received_at' => now()->toDateTimeString(),
+            'source' => 'sepay',
+            'content' => (string) (
+                $payload['content']
+                ?? $payload['description']
+                ?? $payload['transferContent']
+                ?? $payload['transaction_content']
+                ?? ''
+            ),
+            'amount' => (float) (
+                $payload['amount']
+                ?? $payload['transferAmount']
+                ?? $payload['transfer_amount']
+                ?? 0
+            ),
+            'transaction_time' => (string) (
+                $payload['transactionDate']
+                ?? $payload['transaction_time']
+                ?? $payload['time']
+                ?? now()->toDateTimeString()
+            ),
+            'bank_account' => (string) (
+                $payload['accountNumber']
+                ?? $payload['account_no']
+                ?? ''
+            ),
+            'raw' => $payload,
+        ];
+
+        File::append(
+            storage_path('app/sepay_transactions.ndjson'),
+            json_encode($record, JSON_UNESCAPED_UNICODE) . PHP_EOL
+        );
+
+        return response()->json([
+            'ok' => true,
+            'message' => 'Webhook received.',
+        ]);
+    }
+
     /**
-     * Kiểm tra biến động số dư tài khoản qua Casso API để xác minh thanh toán.
-     * Casso API docs: https://docs.casso.vn
+     * Kiểm tra giao dịch đã nhận từ SePay webhook để xác minh thanh toán.
      */
     public function checkPaymentStatus(Request $request): JsonResponse
     {
@@ -726,61 +790,53 @@ class CustomerController extends Controller
             'transfer_note' => 'required|string|max:200',
         ]);
 
-        $cassoApiKey = env('CASSO_API_KEY', '');
-        if (empty($cassoApiKey)) {
+        $sepayApiKey = env('SEPAY_WEBHOOK_API_KEY', '');
+        if (empty($sepayApiKey)) {
             return response()->json([
                 'paid'    => false,
-                'message' => 'Chưa cấu hình Casso API key. Vui lòng liên hệ quản trị viên.',
+                'message' => 'Chưa cấu hình SePay webhook API key. Vui lòng liên hệ quản trị viên.',
                 'error'   => 'missing_api_key',
             ]);
         }
 
         $windowMinutes = (int) env('PAYMENT_CHECK_WINDOW_MINUTES', 30);
-        $fromDate = now()->subMinutes($windowMinutes)->format('Y-m-d H:i:s');
-        $toDate   = now()->addMinutes(1)->format('Y-m-d H:i:s');
         $accountNo = env('PAYMENT_ACCOUNT_NO', '');
+        $transferNote = Str::lower(trim($validated['transfer_note']));
+        $recordsFile = storage_path('app/sepay_transactions.ndjson');
+
+        if (!File::exists($recordsFile)) {
+            return response()->json([
+                'paid'    => false,
+                'message' => 'Chưa nhận được giao dịch nào từ SePay webhook. Vui lòng chuyển khoản và thử lại.',
+            ]);
+        }
 
         try {
-            $response = \Illuminate\Support\Facades\Http::withHeaders([
-                'Authorization' => 'apikey ' . $cassoApiKey,
-            ])->get('https://oauth.casso.vn/v2/transactions', [
-                'bankSubAccNo' => $accountNo,
-                'fromDate'     => $fromDate,
-                'toDate'       => $toDate,
-                'page'         => 1,
-                'pageSize'     => 50,
-            ]);
+            $lines = array_filter(explode(PHP_EOL, (string) File::get($recordsFile)));
+            $cutoff = now()->subMinutes($windowMinutes);
 
-            if (!$response->successful()) {
-                return response()->json([
-                    'paid'    => false,
-                    'message' => 'Không thể kết nối Casso API (HTTP ' . $response->status() . '). Vui lòng thử lại.',
-                    'error'   => 'casso_http_error',
-                ]);
-            }
+            foreach (array_reverse($lines) as $line) {
+                $record = json_decode($line, true);
+                if (!is_array($record)) {
+                    continue;
+                }
 
-            $body = $response->json();
+                $receivedAt = Carbon::parse($record['received_at'] ?? now()->toDateTimeString());
+                if ($receivedAt->lt($cutoff)) {
+                    continue;
+                }
 
-            if (($body['error'] ?? -1) !== 0) {
-                return response()->json([
-                    'paid'    => false,
-                    'message' => 'Casso API trả lỗi: ' . ($body['message'] ?? 'unknown'),
-                    'error'   => 'casso_api_error',
-                ]);
-            }
+                if (!empty($accountNo) && !empty($record['bank_account']) && (string) $record['bank_account'] !== (string) $accountNo) {
+                    continue;
+                }
 
-            $records = $body['data']['records'] ?? [];
-            $transferNote = strtolower(trim($validated['transfer_note']));
-
-            foreach ($records as $record) {
-                $desc = strtolower(trim($record['description'] ?? ''));
-                // So khớp nội dung chuyển khoản (chứa chuỗi mã đặt)
+                $desc = Str::lower(trim((string) ($record['content'] ?? '')));
                 if (str_contains($desc, $transferNote)) {
                     return response()->json([
                         'paid'    => true,
                         'message' => 'Xác nhận thanh toán thành công! Đang gửi yêu cầu đặt dịch vụ...',
-                        'amount'  => $record['amount'] ?? 0,
-                        'when'    => $record['when'] ?? null,
+                        'amount'  => (float) ($record['amount'] ?? 0),
+                        'when'    => $record['transaction_time'] ?? ($record['received_at'] ?? null),
                     ]);
                 }
             }

@@ -16,6 +16,7 @@ use App\Http\Controllers\HDDichVuController;
 use App\Http\Controllers\HDPhongController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CustomerController;
+use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 
 Route::get('/', [AuthController::class, 'index']);
 Route::get('/customer', [CustomerController::class, 'index'])->name('customer.index');
@@ -28,6 +29,9 @@ Route::get('/customer/invoices/{maHD}', [CustomerController::class, 'showInvoice
 Route::get('/customer/check-available-rooms', [CustomerController::class, 'checkAvailableRooms'])->name('customer.check-available-rooms');
 Route::get('/customer/get-tour-schedules', [CustomerController::class, 'getTourSchedules'])->name('customer.get-tour-schedules');
 Route::get('/customer/check-payment', [CustomerController::class, 'checkPaymentStatus'])->name('customer.check-payment');
+Route::post('/payment/sepay/webhook', [CustomerController::class, 'sepayWebhook'])
+    ->withoutMiddleware([ValidateCsrfToken::class])
+    ->name('payment.sepay.webhook');
 Route::get('/customer/services/hotel', [CustomerController::class, 'hotelServices'])->name('customer.services.hotel');
 Route::get('/customer/services/tour', [CustomerController::class, 'tourServices'])->name('customer.services.tour');
 Route::get('/customer/services/addon', [CustomerController::class, 'addonServices'])->name('customer.services.addon');
