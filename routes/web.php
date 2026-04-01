@@ -28,7 +28,6 @@ Route::get('/customer/invoices', [CustomerController::class, 'invoices'])->name(
 Route::get('/customer/invoices/{maHD}', [CustomerController::class, 'showInvoice'])->name('customer.invoices.show');
 Route::get('/customer/check-available-rooms', [CustomerController::class, 'checkAvailableRooms'])->name('customer.check-available-rooms');
 Route::get('/customer/get-tour-schedules', [CustomerController::class, 'getTourSchedules'])->name('customer.get-tour-schedules');
-Route::get('/customer/check-payment', [CustomerController::class, 'checkPaymentStatus'])->name('customer.check-payment');
 Route::post('/payment/sepay/webhook', [CustomerController::class, 'sepayWebhook'])
     ->withoutMiddleware([ValidateCsrfToken::class])
     ->name('payment.sepay.webhook');

@@ -260,7 +260,7 @@
         const paymentStatusMsgEl = document.getElementById('paymentStatusMsg');
         const confirmPaymentSpinnerEl = document.getElementById('confirmPaymentSpinner');
         const paymentBackBtnEl = document.getElementById('paymentBackBtn');
-        const checkPaymentUrl = @json(route('customer.check-payment'));
+        const checkPaymentUrl = @json(route('payment.sepay.webhook'));
         let allowDirectSubmit = false;
         const paymentModal = (window.bootstrap && paymentModalEl)
             ? new bootstrap.Modal(paymentModalEl)
@@ -763,10 +763,14 @@
             setPaymentStatus('info', 'Đang kiểm tra biến động số dư tài khoản...');
 
             try {
-                const params = new URLSearchParams({ transfer_note: transferNote });
-                const resp = await fetch(`${checkPaymentUrl}?${params.toString()}`, {
-                    method: 'GET',
-                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                const resp = await fetch(checkPaymentUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    body: JSON.stringify({ transfer_note: transferNote }),
                 });
 
                 if (!resp.ok) {

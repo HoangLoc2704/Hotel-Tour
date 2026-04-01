@@ -719,6 +719,10 @@ class CustomerController extends Controller
 
     public function sepayWebhook(Request $request): JsonResponse
     {
+        if ($request->filled('transfer_note')) {
+            return $this->checkPaymentStatus($request);
+        }
+
         $configuredApiKey = (string) env('SEPAY_WEBHOOK_API_KEY', '');
 
         if ($configuredApiKey !== '') {
