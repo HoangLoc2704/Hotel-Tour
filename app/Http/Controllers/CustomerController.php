@@ -802,6 +802,7 @@ class CustomerController extends Controller
         $windowMinutes = (int) env('PAYMENT_CHECK_WINDOW_MINUTES', 30);
         $accountNo = env('PAYMENT_ACCOUNT_NO', '');
         $transferNote = Str::lower(trim($validated['transfer_note']));
+        $normalizedTransferNote = preg_replace('/[^a-z0-9]+/i', '', $transferNote) ?? '';
         $recordsFile = storage_path('app/sepay_transactions.ndjson');
 
         if (!File::exists($recordsFile)) {
@@ -831,7 +832,9 @@ class CustomerController extends Controller
                 }
 
                 $desc = Str::lower(trim((string) ($record['content'] ?? '')));
-                if (str_contains($desc, $transferNote)) {
+                $normalizedDesc = preg_replace('/[^a-z0-9]+/i', '', $desc) ?? '';
+
+                if (str_contains($desc, $transferNote) || (!empty($normalizedTransferNote) && str_contains($normalizedDesc, $normalizedTransferNote))) {
                     return response()->json([
                         'paid'    => true,
                         'message' => 'Xác nhận thanh toán thành công! Đang gửi yêu cầu đặt dịch vụ...',

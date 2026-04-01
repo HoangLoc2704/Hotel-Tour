@@ -680,9 +680,13 @@
         }
 
         function buildTransferNote() {
-            const prefix = (paymentInfo.transfer_note_prefix || 'DATDICHVU').toUpperCase();
-            const type = (serviceTypeEl.value || 'NA').toUpperCase();
-            const code = (serviceCodeEl.value || 'NA').toString().toUpperCase();
+            const sanitizeToken = (value) => String(value || 'NA')
+                .toUpperCase()
+                .replace(/[^A-Z0-9]+/g, '');
+
+            const prefix = sanitizeToken(paymentInfo.transfer_note_prefix || 'DATDICHVU');
+            const type = sanitizeToken(serviceTypeEl.value || 'NA');
+            const code = sanitizeToken(serviceCodeEl.value || 'NA');
             return `${prefix}-${type}-${code}`;
         }
 
@@ -696,13 +700,15 @@
                 return '';
             }
 
-            const params = new URLSearchParams({
-                amount: String(Math.max(0, Math.round(amount))),
-                addInfo: transferNote,
-                accountName,
-            });
+            // Encode hyphen as %2D explicitly to keep separators when banking apps parse QR data.
+            const strictEncode = (value) => encodeURIComponent(String(value || '')).replace(/-/g, '%2D');
+            const params = [
+                `amount=${encodeURIComponent(String(Math.max(0, Math.round(amount))))}`,
+                `addInfo=${strictEncode(transferNote)}`,
+                `accountName=${encodeURIComponent(accountName)}`,
+            ].join('&');
 
-            return `https://img.vietqr.io/image/${encodeURIComponent(bankBin)}-${encodeURIComponent(accountNo)}-${encodeURIComponent(qrTemplate)}.png?${params.toString()}`;
+            return `https://img.vietqr.io/image/${encodeURIComponent(bankBin)}-${encodeURIComponent(accountNo)}-${encodeURIComponent(qrTemplate)}.png?${params}`;
         }
 
         function openPaymentModalBeforeSubmit() {
