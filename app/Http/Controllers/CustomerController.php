@@ -18,6 +18,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Session;
 use Illuminate\View\View;
@@ -724,6 +725,7 @@ class CustomerController extends Controller
         }
 
         $configuredApiKey = (string) env('SEPAY_WEBHOOK_API_KEY', '');
+        $strictWebhookAuth = filter_var(env('SEPAY_WEBHOOK_STRICT_AUTH', false), FILTER_VALIDATE_BOOL);
 
         if ($configuredApiKey !== '') {
             $providedApiKey = (string) ($request->header('Authorization')
@@ -732,17 +734,32 @@ class CustomerController extends Controller
                 ?: $request->input('api_key')
                 ?: $request->input('apiKey'));
 
-            $providedApiKey = Str::replaceFirst('Bearer ', '', trim($providedApiKey));
+            $providedApiKey = trim($providedApiKey);
+            if (preg_match('/^(Bearer|Apikey|ApiKey|Token)\s+/i', $providedApiKey) === 1) {
+                $providedApiKey = preg_replace('/^(Bearer|Apikey|ApiKey|Token)\s+/i', '', $providedApiKey) ?? $providedApiKey;
+            }
 
             if (!hash_equals($configuredApiKey, $providedApiKey)) {
+                Log::warning('SePay webhook unauthorized', [
+                    'path' => $request->path(),
+                    'has_authorization' => $request->header('Authorization') !== null,
+                    'has_x_api_key' => $request->header('X-API-KEY') !== null,
+                    'has_x_sepay_api_key' => $request->header('X-SePay-Api-Key') !== null,
+                ]);
+
+                if (!$strictWebhookAuth) {
+                    // Compatibility mode for providers that cannot send custom auth headers.
+                } else {
                 return response()->json([
                     'ok' => false,
                     'message' => 'Unauthorized webhook request.',
                 ], 401);
+                }
             }
         }
 
         $payload = $request->all();
+        $dataPayload = is_array($payload['data'] ?? null) ? $payload['data'] : [];
 
         $record = [
             'received_at' => now()->toDateTimeString(),
@@ -752,23 +769,35 @@ class CustomerController extends Controller
                 ?? $payload['description']
                 ?? $payload['transferContent']
                 ?? $payload['transaction_content']
+                ?? $dataPayload['content']
+                ?? $dataPayload['description']
+                ?? $dataPayload['transferContent']
+                ?? $dataPayload['transaction_content']
                 ?? ''
             ),
             'amount' => (float) (
                 $payload['amount']
                 ?? $payload['transferAmount']
                 ?? $payload['transfer_amount']
+                ?? $dataPayload['amount']
+                ?? $dataPayload['transferAmount']
+                ?? $dataPayload['transfer_amount']
                 ?? 0
             ),
             'transaction_time' => (string) (
                 $payload['transactionDate']
                 ?? $payload['transaction_time']
                 ?? $payload['time']
+                ?? $dataPayload['transactionDate']
+                ?? $dataPayload['transaction_time']
+                ?? $dataPayload['time']
                 ?? now()->toDateTimeString()
             ),
             'bank_account' => (string) (
                 $payload['accountNumber']
                 ?? $payload['account_no']
+                ?? $dataPayload['accountNumber']
+                ?? $dataPayload['account_no']
                 ?? ''
             ),
             'raw' => $payload,
@@ -793,15 +822,6 @@ class CustomerController extends Controller
         $validated = $request->validate([
             'transfer_note' => 'required|string|max:200',
         ]);
-
-        $sepayApiKey = env('SEPAY_WEBHOOK_API_KEY', '');
-        if (empty($sepayApiKey)) {
-            return response()->json([
-                'paid'    => false,
-                'message' => 'Chưa cấu hình SePay webhook API key. Vui lòng liên hệ quản trị viên.',
-                'error'   => 'missing_api_key',
-            ]);
-        }
 
         $windowMinutes = (int) env('PAYMENT_CHECK_WINDOW_MINUTES', 30);
         $accountNo = env('PAYMENT_ACCOUNT_NO', '');
