@@ -262,9 +262,9 @@ class CustomerController extends Controller
 
         $paymentInfo = [
             'bank_bin' => env('PAYMENT_BANK_BIN', '970436'),
-            'bank_name' => env('PAYMENT_BANK_NAME', 'Vietcombank'),
-            'account_no' => env('PAYMENT_ACCOUNT_NO', '9857147907'),
-            'account_name' => env('PAYMENT_ACCOUNT_NAME', 'TRINH HOANG LOC'),
+            'bank_name' => env('PAYMENT_BANK_NAME', 'MB'),
+            'account_no' => env('PAYMENT_ACCOUNT_NO', '0358178132'),
+            'account_name' => env('PAYMENT_ACCOUNT_NAME', 'NGUYEN THAI HOC'),
             'transfer_note_prefix' => env('PAYMENT_TRANSFER_NOTE_PREFIX', 'DATDICHVU'),
             'qr_template' => env('PAYMENT_QR_TEMPLATE', 'compact2'),
         ];
