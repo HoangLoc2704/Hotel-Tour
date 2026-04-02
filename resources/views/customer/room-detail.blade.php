@@ -18,7 +18,7 @@
                 <p class="detail-muted">Sức chứa: {{ $phong->SoLuongNguoi ?? 'Đang cập nhật' }} khách</p>
                 <p>{{ $phong->MoTa ?: 'Phòng được thiết kế tối ưu không gian và trải nghiệm lưu trú thoải mái cho mọi nhóm khách.' }}</p>
                 <div class="detail-price">{{ number_format($phong->GiaPhong ?? 0, 0, ',', '.') }} VND / đêm</div>
-                <a href="{{ route('customer.booking') }}" class="btn btn-book mt-3">Đặt phòng ngay</a>
+                <a href="{{ route('customer.booking', ['loai_dich_vu' => 'phong', 'ma_dich_vu' => $phong->TenPhong]) }}" class="btn btn-book mt-3">Đặt phòng ngay</a>
             </div>
         </section>
 

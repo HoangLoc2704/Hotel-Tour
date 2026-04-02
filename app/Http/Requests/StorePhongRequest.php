@@ -19,6 +19,7 @@ class StorePhongRequest extends FormRequest
             'SoLuongNguoi'  => 'required|integer',
             'GiaPhong'      => 'required|numeric',
             'HinhAnh'       => 'nullable|string|max:255',
+            'HinhAnhFile'   => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
             'MoTa'          => 'nullable|string|max:255',
             'MaLoai'        => 'required|exists:tbl_LoaiPhong,MaLoai',
         ];

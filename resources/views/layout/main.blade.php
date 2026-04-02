@@ -58,11 +58,13 @@
                 <li class="sidebar-item">
                     <a href="{{ route('nhan-vien.index') }}">Quản lý nhân viên</a>
                 </li>
-                @endif
 
                 <li class="sidebar-item">
                     <a href="{{ route('huong-dan-vien.index') }}">Quản lý hướng dẫn viên</a>
                 </li>
+                @endif
+
+
                 @if ($canManageExceptPersonnel)
                 <li class="sidebar-header">DANH MỤC</li>
 
@@ -83,6 +85,10 @@
                 <li class="sidebar-item">
                     <a href="{{ route('tour.index') }}">Quản lý tour du lịch</a>
                 </li>
+
+                <li class="sidebar-item">
+                    <a href="{{ route('lich-khoi-hanh.index') }}">Lịch khởi hành</a>
+                </li>
                 @endif
 
                 @if ($canManageExceptPersonnel)
@@ -95,15 +101,7 @@
                 <li class="sidebar-item">
                     <a href="{{ route('khach-hang.index') }}">Quản lý khách hàng</a>
                 </li>
-                @endif
 
-                @if ($canAccessTourSchedule)
-                <li class="sidebar-item">
-                    <a href="{{ route('lich-khoi-hanh.index') }}">Lịch khởi hành</a>
-                </li>
-                @endif
-
-                @if ($canManageExceptPersonnel)
                 <li class="sidebar-item">
                     <a href="{{ route('hd-tour.index') }}">HD Tour</a>
                 </li>
@@ -125,8 +123,6 @@
 
             <!-- Navbar -->
             <nav class="navbar d-flex justify-content-end">
-                <span class="hamburger" id="toggleSidebar"> ☰ </span>
-
                 <span class="me-3">Xin chào, {{ session('user_name') ?? 'Admin' }}</span>
                 <form method="POST" action="{{ route('logout') }}" class="d-inline">
                     @csrf

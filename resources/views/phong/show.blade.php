@@ -37,7 +37,14 @@
     </tr>
     <tr>
         <th>Hình ảnh</th>
-        <td>{{ $phong->HinhAnh }}</td>
+        <td>
+            @if(!empty($phong->HinhAnh))
+                <div class="mb-2">{{ $phong->HinhAnh }}</div>
+                <img src="{{ asset('anh/' . $phong->HinhAnh) }}" alt="{{ $phong->TenPhong }}" style="max-width: 320px; width: 100%; height: auto; border-radius: 8px; border: 1px solid #ddd;">
+            @else
+                -
+            @endif
+        </td>
     </tr>
 </table>
 @endsection

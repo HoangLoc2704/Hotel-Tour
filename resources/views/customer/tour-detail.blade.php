@@ -16,7 +16,7 @@
                     <p><strong>Lịch trình:</strong> {{ $tour->LichTrinh }}</p>
                 @endif
                 <div class="detail-price">Từ {{ number_format($tour->GiaTourNguoiLon ?? 0, 0, ',', '.') }} VND / người lớn</div>
-                <a href="{{ route('customer.booking') }}" class="btn btn-book mt-3">Đặt tour ngay</a>
+                <a href="{{ route('customer.booking', ['loai_dich_vu' => 'tour', 'ma_dich_vu' => $tour->MaTour]) }}" class="btn btn-book mt-3">Đặt tour ngay</a>
             </div>
         </section>
 

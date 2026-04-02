@@ -22,7 +22,7 @@
 
 <div class="card">
     <div class="card-body">
-        <form method="POST" action="{{ route('phong.update', $phong->MaPhong) }}">
+        <form method="POST" action="{{ route('phong.update', $phong->MaPhong) }}" enctype="multipart/form-data">
             @csrf
             @method('PUT')
             <div class="mb-3">
@@ -55,8 +55,15 @@
                 <textarea name="MoTa" class="form-control">{{ old('MoTa', $phong->MoTa) }}</textarea>
             </div>
             <div class="mb-3">
-                <label class="form-label">Hình ảnh URL</label>
-                <input type="text" name="HinhAnh" class="form-control" value="{{ old('HinhAnh', $phong->HinhAnh) }}">
+                <label class="form-label">Hình ảnh</label>
+                @if(!empty($phong->HinhAnh))
+                    <div class="mb-2">
+                        <div class="small text-muted">Ảnh hiện tại: {{ $phong->HinhAnh }}</div>
+                        <img src="{{ asset('anh/' . $phong->HinhAnh) }}" alt="{{ $phong->TenPhong }}" style="max-width: 220px; width: 100%; height: auto; border-radius: 8px; border: 1px solid #ddd;">
+                    </div>
+                @endif
+                <input type="file" name="HinhAnhFile" class="form-control" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
+                <small class="text-muted">Chọn ảnh mới nếu muốn thay thế ảnh hiện tại.</small>
             </div>
             <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> Lưu</button>
         </form>

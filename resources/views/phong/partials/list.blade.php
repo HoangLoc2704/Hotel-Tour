@@ -6,6 +6,7 @@
                 <th>Tên phòng</th>
                 <th>Loại</th>
                 <th>Giá</th>
+                <th>Tên ảnh</th>
                 <th>Ngày đã đặt</th>
                 <th>Hành động</th>
             </tr>
@@ -17,6 +18,7 @@
                 <td>{{ $p->TenPhong }}</td>
                 <td>{{ $p->loaiPhong->TenLoai ?? '' }}</td>
                 <td>{{ number_format($p->GiaPhong, 0, ',', '.') }}</td>
+                <td>{{ $p->HinhAnh ?: '-' }}</td>
                 <td>
                     <div style="position: relative; display: inline-block;">
                         <button
@@ -49,7 +51,7 @@
                 </td>
             </tr>
             @empty
-            <tr><td colspan="6" class="text-center text-muted py-4">Không có phòng</td></tr>
+            <tr><td colspan="7" class="text-center text-muted py-4">Không có phòng</td></tr>
             @endforelse
         </tbody>
     </table>

@@ -65,7 +65,10 @@
                             </form>
                         </div>
                     @else
-                        <a href="{{ route('customer.login') }}" class="btn btn-outline-light btn-sm customer-login-btn">Đăng nhập</a>
+                        <div class="d-flex gap-2">
+                            <a href="{{ route('customer.register') }}" class="btn btn-light btn-sm customer-login-btn">Đăng ký</a>
+                            <a href="{{ route('customer.login') }}" class="btn btn-outline-light btn-sm customer-login-btn">Đăng nhập</a>
+                        </div>
                     @endif
                 </div>
             </div>

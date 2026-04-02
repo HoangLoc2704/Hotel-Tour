@@ -8,6 +8,7 @@ use App\Models\Phong;
 use Carbon\CarbonPeriod;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class PhongController extends Controller
 {
@@ -74,6 +75,13 @@ class PhongController extends Controller
     {
         $validated = $request->validated();
 
+        if ($request->hasFile('HinhAnhFile')) {
+            $file = $request->file('HinhAnhFile');
+            $fileName = Str::uuid()->toString() . '.' . $file->getClientOriginalExtension();
+            $file->move(public_path('anh'), $fileName);
+            $validated['HinhAnh'] = $fileName;
+        }
+
         $phong = Phong::create($validated);
 
         if ($this->wantsJson($request)) {
@@ -105,6 +113,15 @@ class PhongController extends Controller
     {
         $phong = Phong::findOrFail($id);
         $validated = $request->validated();
+
+        if ($request->hasFile('HinhAnhFile')) {
+            $file = $request->file('HinhAnhFile');
+            $fileName = Str::uuid()->toString() . '.' . $file->getClientOriginalExtension();
+            $file->move(public_path('anh'), $fileName);
+            $validated['HinhAnh'] = $fileName;
+        } else {
+            unset($validated['HinhAnh']);
+        }
 
         $phong->update($validated);
 

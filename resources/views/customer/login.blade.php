@@ -29,7 +29,8 @@
                         <label class="form-label">Mật khẩu</label>
                         <input type="password" name="mat_khau" class="form-control" required>
                     </div>
-                    <div class="col-12 text-end">
+                    <div class="col-12 d-flex justify-content-between align-items-center">
+                        <a href="{{ route('customer.register') }}" class="text-decoration-none">Chua co tai khoan? Dang ky</a>
                         <button type="submit" class="btn btn-book">Đăng nhập</button>
                     </div>
                 </form>

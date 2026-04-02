@@ -27,6 +27,8 @@
 
                 <form id="bookingForm" method="POST" action="{{ route('customer.book-service') }}" class="row g-3">
                     @csrf
+                    <input type="hidden" id="paymentVerified" name="payment_verified" value="{{ old('payment_verified', 0) }}">
+                    <input type="hidden" id="paymentTransferNoteInput" name="payment_transfer_note" value="{{ old('payment_transfer_note', '') }}">
                     <div class="col-md-6">
                         <label class="form-label">Họ tên</label>
                         <input type="text" name="ho_ten" class="form-control" value="{{ old('ho_ten', $customerProfile->TenKH ?? '') }}" required>
@@ -220,8 +222,8 @@
         };
         const paymentInfo = @json($paymentInfo);
 
-        const oldServiceCode = @json(old('ma_dich_vu'));
-        const oldServiceType = @json(old('loai_dich_vu'));
+        const oldServiceCode = @json(old('ma_dich_vu', request('ma_dich_vu')));
+        const oldServiceType = @json(old('loai_dich_vu', request('loai_dich_vu')));
         const bookingFormEl = document.getElementById('bookingForm');
         const serviceTypeEl = document.getElementById('serviceType');
         const serviceCodeEl = document.getElementById('serviceCode');
@@ -260,6 +262,8 @@
         const paymentStatusMsgEl = document.getElementById('paymentStatusMsg');
         const confirmPaymentSpinnerEl = document.getElementById('confirmPaymentSpinner');
         const paymentBackBtnEl = document.getElementById('paymentBackBtn');
+        const paymentVerifiedEl = document.getElementById('paymentVerified');
+        const paymentTransferNoteInputEl = document.getElementById('paymentTransferNoteInput');
         const checkPaymentUrl = @json(route('payment.sepay.webhook'));
         let allowDirectSubmit = false;
         const paymentModal = (window.bootstrap && paymentModalEl)
@@ -361,7 +365,7 @@
                 const opt = document.createElement('option');
                 opt.value = item.value;
                 opt.textContent = type === 'phong' ? item.label : `${item.label} (${item.value})`;
-                if (oldServiceCode && oldServiceCode === item.value) {
+                if (oldServiceCode && String(oldServiceCode) === String(item.value)) {
                     opt.selected = true;
                 }
                 serviceCodeEl.appendChild(opt);
@@ -418,6 +422,10 @@
                 soChoConLaiEl.value = '';
                 ngayKhoiHanhDisplayEl.value = '';
                 ngayKetThucDisplayEl.value = '';
+
+                if (serviceCodeEl.value) {
+                    fetchTourSchedules(serviceCodeEl.value);
+                }
             } else if (type === 'dich-vu') {
                 calculateNonTourPrice();
             }
@@ -713,8 +721,7 @@
 
         function openPaymentModalBeforeSubmit() {
             if (!paymentModal) {
-                allowDirectSubmit = true;
-                bookingFormEl.submit();
+                setPaymentStatus('danger', 'Không thể mở hộp thoại xác nhận thanh toán. Vui lòng tải lại trang và thử lại.');
                 return;
             }
 
@@ -740,6 +747,8 @@
             confirmPaymentSubmitBtn.disabled = false;
             paymentStatusMsgEl.className = 'alert mb-0 d-none';
             paymentStatusMsgEl.textContent = '';
+            paymentVerifiedEl.value = '0';
+            paymentTransferNoteInputEl.value = '';
 
             paymentModal.show();
         }
@@ -782,6 +791,8 @@
                 if (data.paid) {
                     setPaymentStatus('success', data.message || 'Xác nhận thanh toán thành công! Đang gửi yêu cầu...');
                     confirmPaymentSpinnerEl.classList.add('d-none');
+                    paymentVerifiedEl.value = '1';
+                    paymentTransferNoteInputEl.value = transferNote;
                     // Tự submit sau 1.5 giây để người dùng thấy thông báo
                     setTimeout(() => {
                         allowDirectSubmit = true;
@@ -804,6 +815,7 @@
 
         // Initialize on page load if old values exist
         if (oldServiceType) {
+            serviceTypeEl.value = oldServiceType;
             updateServiceCodeOptions();
             if (oldServiceType === 'phong') {
                 setTimeout(checkAvailableRooms, 100);

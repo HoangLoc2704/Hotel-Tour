@@ -19,6 +19,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Session;
 use Illuminate\View\View;
@@ -350,6 +351,116 @@ class CustomerController extends Controller
         return view('customer.login');
     }
 
+    public function register(): View
+    {
+        return view('customer.register');
+    }
+
+    public function sendRegisterOtp(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'ho_ten' => 'required|string|max:100',
+            'email' => 'required|email|max:100',
+            'so_dien_thoai' => 'required|string|max:20',
+            'mat_khau' => 'required|string|min:6|confirmed',
+        ]);
+
+        $otp = (string) random_int(100000, 999999);
+
+        Session::put('customer_register_otp_hash', Hash::make($otp));
+        Session::put('customer_register_otp_expires_at', now()->addMinutes(5)->timestamp);
+        Session::put('customer_register_payload', [
+            'ho_ten' => $validated['ho_ten'],
+            'email' => $validated['email'],
+            'so_dien_thoai' => $validated['so_dien_thoai'],
+            'mat_khau' => $validated['mat_khau'],
+        ]);
+
+        try {
+            Mail::raw(
+                "Ma OTP dang ky tai khoan cua ban la: {$otp}. Ma co hieu luc trong 5 phut.",
+                function ($message) use ($validated) {
+                    $message->to($validated['email'])
+                        ->subject('Ma OTP dang ky tai khoan');
+                }
+            );
+        } catch (\Exception $e) {
+            return back()->withErrors([
+                'otp' => 'Khong the gui ma OTP luc nay. Vui long thu lai sau.',
+            ])->withInput($request->except(['mat_khau', 'mat_khau_confirmation', 'otp']));
+        }
+
+        return back()
+            ->with('otp_sent', true)
+            ->with('success', 'Da gui ma OTP ve email cua ban. Vui long nhap OTP de hoan tat dang ky.')
+            ->withInput($request->except(['otp']));
+    }
+
+    public function submitRegister(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'ho_ten' => 'required|string|max:100',
+            'email' => 'required|email|max:100',
+            'so_dien_thoai' => 'required|string|max:20',
+            'mat_khau' => 'required|string|min:6|confirmed',
+            'otp' => 'required|digits:6',
+        ]);
+
+        $otpHash = Session::get('customer_register_otp_hash');
+        $otpExpiresAt = (int) Session::get('customer_register_otp_expires_at', 0);
+        $payload = Session::get('customer_register_payload');
+
+        if (empty($otpHash) || empty($payload) || now()->timestamp > $otpExpiresAt) {
+            Session::forget(['customer_register_otp_hash', 'customer_register_otp_expires_at', 'customer_register_payload']);
+
+            return back()->withErrors([
+                'otp' => 'OTP da het han hoac khong ton tai. Vui long bam Dang ky de nhan ma moi.',
+            ])->withInput($request->except(['mat_khau', 'mat_khau_confirmation', 'otp']));
+        }
+
+        if (
+            ($payload['ho_ten'] ?? '') !== $validated['ho_ten']
+            || ($payload['email'] ?? '') !== $validated['email']
+            || ($payload['so_dien_thoai'] ?? '') !== $validated['so_dien_thoai']
+        ) {
+            return back()->withErrors([
+                'otp' => 'Thong tin da thay doi sau khi gui OTP. Vui long bam Dang ky de nhan OTP moi.',
+            ])->withInput($request->except(['mat_khau', 'mat_khau_confirmation', 'otp']));
+        }
+
+        if (!Hash::check((string) $validated['otp'], (string) $otpHash)) {
+            return back()->withErrors([
+                'otp' => 'Ma OTP khong dung. Vui long kiem tra lai.',
+            ])->withInput($request->except(['mat_khau', 'mat_khau_confirmation']));
+        }
+
+        $existingCustomer = KhachHang::query()
+            ->where('TenKH', $validated['ho_ten'])
+            ->where('Email', $validated['email'])
+            ->where('SDT', $validated['so_dien_thoai'])
+            ->first();
+
+        $customerData = [
+            'TenKH' => $validated['ho_ten'],
+            'Email' => $validated['email'],
+            'SDT' => $validated['so_dien_thoai'],
+            'MatKhau' => Hash::make($validated['mat_khau']),
+            'TrangThai' => 1,
+        ];
+
+        if ($existingCustomer) {
+            $existingCustomer->update($customerData);
+            $successMessage = 'Tai khoan da ton tai, he thong da cap nhat thong tin va mat khau thanh cong.';
+        } else {
+            KhachHang::query()->create($customerData);
+            $successMessage = 'Dang ky tai khoan khach hang thanh cong. Vui long dang nhap de tiep tuc.';
+        }
+
+        Session::forget(['customer_register_otp_hash', 'customer_register_otp_expires_at', 'customer_register_payload']);
+
+        return redirect()->route('customer.login')->with('success', $successMessage);
+    }
+
     public function submitLogin(Request $request): RedirectResponse
     {
         $validated = $request->validate([
@@ -475,6 +586,8 @@ class CustomerController extends Controller
             'ma_dich_vu' => 'required|string|max:30',
             'so_luong_khach' => 'nullable|integer|min:1|max:50',
             'ghi_chu' => 'nullable|string|max:500',
+            'payment_verified' => 'nullable|in:0,1',
+            'payment_transfer_note' => 'nullable|string|max:200',
         ];
 
         // Validate thuộc tính riêng của từng loại dịch vụ
@@ -490,6 +603,19 @@ class CustomerController extends Controller
         }
 
         $validated = $request->validate($rules);
+        $isPaid = (
+            (string) ($validated['payment_verified'] ?? '0') === '1'
+            && !empty($validated['payment_transfer_note'])
+            && $this->findMatchedPaymentRecord((string) $validated['payment_transfer_note']) !== null
+        );
+
+        if (!$isPaid) {
+            return back()->withErrors([
+                'error' => 'Vui lòng bấm xác nhận thanh toán và chỉ gửi yêu cầu khi hệ thống báo thanh toán thành công.',
+            ])->withInput();
+        }
+
+        $paymentValue = 1;
 
         $maDichVu = $validated['ma_dich_vu'];
 
@@ -512,7 +638,7 @@ class CustomerController extends Controller
                     'NgayTao' => now(),
                     'ThanhTien' => 0,
                     'TrangThai' => 1,
-                    'ThanhToan' => 0,
+                    'ThanhToan' => $paymentValue,
                 ]);
 
                 $phong = Phong::query()->findOrFail($maDichVu);
@@ -530,7 +656,7 @@ class CustomerController extends Controller
                     'NgayTraPhong' => $validated['ngay_tra_phong'],
                     'TongTien' => $tongTienPhong,
                     'TrangThai' => 1,
-                    'ThanhToan' => 0,
+                    'ThanhToan' => $paymentValue,
                 ]);
 
                 HoaDon::recalculateThanhTien($hoaDon->MaHD);
@@ -548,7 +674,7 @@ class CustomerController extends Controller
                     'NgayTao' => now(),
                     'ThanhTien' => 0,
                     'TrangThai' => 1,
-                    'ThanhToan' => 0,
+                    'ThanhToan' => $paymentValue,
                 ]);
 
                 $dichVu = DichVu::query()->findOrFail($maDichVu);
@@ -561,7 +687,7 @@ class CustomerController extends Controller
                     'SoLuong' => $soLuong,
                     'TongTien' => $tongTienDichVu,
                     'TrangThai' => 1,
-                    'ThanhToan' => 0,
+                    'ThanhToan' => $paymentValue,
                 ]);
 
                 HoaDon::recalculateThanhTien($hoaDon->MaHD);
@@ -580,7 +706,7 @@ class CustomerController extends Controller
                     'NgayTao' => now(),
                     'ThanhTien' => 0,
                     'TrangThai' => 1,
-                    'ThanhToan' => 0,
+                    'ThanhToan' => $paymentValue,
                 ]);
 
                 $maLKH = $validated['ma_lich_khoi_hanh'];
@@ -611,7 +737,7 @@ class CustomerController extends Controller
                     'SoTreEm' => $soTreEm,
                     'TongTien' => $tongTienTour,
                     'TrangThai' => 1,
-                    'ThanhToan' => 0,
+                    'ThanhToan' => $paymentValue,
                 ]);
 
                 // Decrement available seats in tour schedule
@@ -823,17 +949,33 @@ class CustomerController extends Controller
             'transfer_note' => 'required|string|max:200',
         ]);
 
+        $matchedRecord = $this->findMatchedPaymentRecord((string) $validated['transfer_note']);
+
+        if (is_array($matchedRecord)) {
+            return response()->json([
+                'paid'    => true,
+                'message' => 'Xác nhận thanh toán thành công! Đang gửi yêu cầu đặt dịch vụ...',
+                'amount'  => (float) ($matchedRecord['amount'] ?? 0),
+                'when'    => $matchedRecord['transaction_time'] ?? ($matchedRecord['received_at'] ?? null),
+            ]);
+        }
+
+        return response()->json([
+            'paid'    => false,
+            'message' => 'Chưa phát hiện biến động số dư với nội dung "' . $validated['transfer_note'] . '". Vui lòng kiểm tra lại hoặc thử sau vài giây.',
+        ]);
+    }
+
+    private function findMatchedPaymentRecord(string $transferNote): ?array
+    {
         $windowMinutes = (int) env('PAYMENT_CHECK_WINDOW_MINUTES', 30);
         $accountNo = env('PAYMENT_ACCOUNT_NO', '');
-        $transferNote = Str::lower(trim($validated['transfer_note']));
+        $transferNote = Str::lower(trim($transferNote));
         $normalizedTransferNote = preg_replace('/[^a-z0-9]+/i', '', $transferNote) ?? '';
         $recordsFile = storage_path('app/sepay_transactions.ndjson');
 
         if (!File::exists($recordsFile)) {
-            return response()->json([
-                'paid'    => false,
-                'message' => 'Chưa nhận được giao dịch nào từ SePay webhook. Vui lòng chuyển khoản và thử lại.',
-            ]);
+            return null;
         }
 
         try {
@@ -859,26 +1001,14 @@ class CustomerController extends Controller
                 $normalizedDesc = preg_replace('/[^a-z0-9]+/i', '', $desc) ?? '';
 
                 if (str_contains($desc, $transferNote) || (!empty($normalizedTransferNote) && str_contains($normalizedDesc, $normalizedTransferNote))) {
-                    return response()->json([
-                        'paid'    => true,
-                        'message' => 'Xác nhận thanh toán thành công! Đang gửi yêu cầu đặt dịch vụ...',
-                        'amount'  => (float) ($record['amount'] ?? 0),
-                        'when'    => $record['transaction_time'] ?? ($record['received_at'] ?? null),
-                    ]);
+                    return $record;
                 }
             }
-
-            return response()->json([
-                'paid'    => false,
-                'message' => 'Chưa phát hiện biến động số dư với nội dung "' . $validated['transfer_note'] . '". Vui lòng kiểm tra lại hoặc thử sau vài giây.',
-            ]);
         } catch (\Exception $e) {
-            return response()->json([
-                'paid'    => false,
-                'message' => 'Lỗi khi kiểm tra thanh toán. Vui lòng thử lại.',
-                'error'   => 'exception',
-            ]);
+            return null;
         }
+
+        return null;
     }
 
     /**

@@ -12,7 +12,7 @@
                 <p class="detail-muted">Mã dịch vụ: {{ $dichVu->MaDV }}</p>
                 <p>Dịch vụ được cung cấp với tiêu chuẩn vận hành đồng nhất, phù hợp đa dạng nhu cầu của khách lưu trú và khách tham quan.</p>
                 <div class="detail-price">{{ number_format($dichVu->GiaDV ?? 0, 0, ',', '.') }} VND</div>
-                <a href="{{ route('customer.booking') }}" class="btn btn-book mt-3">Đặt dịch vụ ngay</a>
+                <a href="{{ route('customer.booking', ['loai_dich_vu' => 'dich-vu', 'ma_dich_vu' => $dichVu->MaDV]) }}" class="btn btn-book mt-3">Đặt dịch vụ ngay</a>
             </div>
         </section>
 

@@ -22,7 +22,7 @@
 
 <div class="card">
     <div class="card-body">
-        <form method="POST" action="{{ route('phong.store') }}">
+        <form method="POST" action="{{ route('phong.store') }}" enctype="multipart/form-data">
             @csrf
             <div class="mb-3">
                 <label class="form-label">Mã phòng*</label>
@@ -54,8 +54,9 @@
                 <textarea name="MoTa" class="form-control">{{ old('MoTa') }}</textarea>
             </div>
             <div class="mb-3">
-                <label class="form-label">Hình ảnh URL</label>
-                <input type="text" name="HinhAnh" class="form-control" value="{{ old('HinhAnh') }}">
+                <label class="form-label">Hình ảnh</label>
+                <input type="file" name="HinhAnhFile" class="form-control" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
+                <small class="text-muted">Chọn ảnh từ máy tính. Định dạng: JPG, PNG, WEBP (tối đa 5MB).</small>
             </div>
             <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> Lưu</button>
         </form>
