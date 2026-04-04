@@ -59,7 +59,7 @@
                 @if(!empty($phong->HinhAnh))
                     <div class="mb-2">
                         <div class="small text-muted">Ảnh hiện tại: {{ $phong->HinhAnh }}</div>
-                        <img src="{{ asset('anh/' . $phong->HinhAnh) }}" alt="{{ $phong->TenPhong }}" style="max-width: 220px; width: 100%; height: auto; border-radius: 8px; border: 1px solid #ddd;">
+                        <img src="{{ asset('img/Room' . $phong->HinhAnh) }}" alt="{{ $phong->TenPhong }}" style="max-width: 220px; width: 100%; height: auto; border-radius: 8px; border: 1px solid #ddd;">
                     </div>
                 @endif
                 <input type="file" name="HinhAnhFile" class="form-control" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">

@@ -78,7 +78,7 @@ class PhongController extends Controller
         if ($request->hasFile('HinhAnhFile')) {
             $file = $request->file('HinhAnhFile');
             $fileName = Str::uuid()->toString() . '.' . $file->getClientOriginalExtension();
-            $file->move(public_path('anh'), $fileName);
+            $file->move(public_path('img'), $fileName);
             $validated['HinhAnh'] = $fileName;
         }
 
@@ -117,7 +117,7 @@ class PhongController extends Controller
         if ($request->hasFile('HinhAnhFile')) {
             $file = $request->file('HinhAnhFile');
             $fileName = Str::uuid()->toString() . '.' . $file->getClientOriginalExtension();
-            $file->move(public_path('anh'), $fileName);
+            $file->move(public_path('img'), $fileName);
             $validated['HinhAnh'] = $fileName;
         } else {
             unset($validated['HinhAnh']);

@@ -77,7 +77,7 @@
                         <article class="offer-card h-100">
                             <div class="offer-image">
                                 <img
-                                    src="{{ asset('anh/' . ($phong->HinhAnh ?: 'PDonNT.jpg')) }}"
+                                    src="{{ asset('img/Room' . ($phong->HinhAnh ?: 'Don1.jpg')) }}"
                                     alt="{{ $phong->TenPhong }}"
                                     loading="lazy"
                                 >

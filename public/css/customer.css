@@ -328,6 +328,74 @@ body {
     font-size: 1.1rem;
 }
 
+.customer-cart-badge {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: #ffcc4d;
+    color: #103827;
+    font-size: 0.72rem;
+    font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.cart-summary-card {
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 1rem;
+    background: linear-gradient(180deg, #f9fffb 0%, #f1faf5 100%);
+}
+
+.cart-item-list {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.cart-item-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.9rem 1rem;
+    border: 1px solid #d8ebe0;
+    border-radius: 14px;
+    background: #fff;
+}
+
+.booking-inline-head,
+.booking-summary-box {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.95rem 1rem;
+    border-radius: 14px;
+    background: #f7fcf9;
+    border: 1px solid #dceee3;
+}
+
+.summary-label {
+    font-size: 0.9rem;
+    color: var(--ink-600);
+}
+
+.summary-value {
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: var(--green-700);
+}
+
+.summary-meta {
+    color: var(--ink-600);
+    text-align: right;
+}
+
 .login-shell {
     display: flex;
     justify-content: center;
@@ -383,5 +451,16 @@ body {
 
     .detail-media {
         min-height: 200px;
+    }
+
+    .cart-item-row,
+    .booking-inline-head,
+    .booking-summary-box {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .summary-meta {
+        text-align: left;
     }
 }

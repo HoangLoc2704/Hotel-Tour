@@ -6,9 +6,12 @@
     <main class="container py-5">
         <section id="booking">
             <div class="booking-wrap">
-                <div class="section-title-wrap mb-3">
-                    <h2>Đặt dịch vụ ngay</h2>
-                    <p>Để lại thông tin, chúng tôi sẽ xác nhận lịch đặt với bạn nhanh nhất.</p>
+                <div class="section-title-wrap mb-3 d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-2">
+                    <div>
+                        <h2>Đặt dịch vụ ngay</h2>
+                        <p>Để lại thông tin, chúng tôi sẽ xác nhận lịch đặt với bạn nhanh nhất.</p>
+                    </div>
+                    <a href="{{ route('customer.cart') }}#cart-section" class="btn btn-outline-success">Xem giỏ hàng (<span data-cart-count-text>{{ count(session('customer_cart', [])) }}</span>)</a>
                 </div>
 
                 @if (session('success'))
@@ -27,19 +30,21 @@
 
                 <form id="bookingForm" method="POST" action="{{ route('customer.book-service') }}" class="row g-3">
                     @csrf
+                    <input type="hidden" id="bookingActionInput" name="booking_action" value="{{ old('booking_action', 'book_now') }}">
+                    <input type="hidden" id="paymentMethodInput" name="payment_method" value="{{ old('payment_method', 'online') }}">
                     <input type="hidden" id="paymentVerified" name="payment_verified" value="{{ old('payment_verified', 0) }}">
                     <input type="hidden" id="paymentTransferNoteInput" name="payment_transfer_note" value="{{ old('payment_transfer_note', '') }}">
                     <div class="col-md-6">
                         <label class="form-label">Họ tên</label>
-                        <input type="text" name="ho_ten" class="form-control" value="{{ old('ho_ten', $customerProfile->TenKH ?? '') }}" required>
+                        <input type="text" name="ho_ten" class="form-control" value="{{ old('ho_ten', $customerProfile->TenKH ?? session('customer_guest_profile.ho_ten', '')) }}" required>
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">Số điện thoại</label>
-                        <input type="text" name="so_dien_thoai" class="form-control" value="{{ old('so_dien_thoai', $customerProfile->SDT ?? '') }}" required>
+                        <input type="text" name="so_dien_thoai" class="form-control" value="{{ old('so_dien_thoai', $customerProfile->SDT ?? session('customer_guest_profile.so_dien_thoai', '')) }}" required>
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">Email</label>
-                        <input type="email" name="email" class="form-control" value="{{ old('email', $customerProfile->Email ?? '') }}">
+                        <input type="email" name="email" class="form-control" value="{{ old('email', $customerProfile->Email ?? session('customer_guest_profile.email', '')) }}" required>
                     </div>
 
                     <div class="col-md-4">
@@ -159,8 +164,14 @@
                         <textarea name="ghi_chu" rows="3" class="form-control" placeholder="Ví dụ: cần check-in sớm, ưu tiên tầng cao...">{{ old('ghi_chu') }}</textarea>
                     </div>
 
-                    <div class="col-12 text-end">
-                        <button type="submit" class="btn btn-book">Gửi yêu cầu đặt dịch vụ</button>
+                    <div class="col-12">
+                        <div id="bookingAjaxMessage" class="alert d-none mb-0" role="alert"></div>
+                    </div>
+
+                    <div class="col-12 d-flex flex-wrap justify-content-end gap-2">
+                        <button type="submit" class="btn btn-outline-success" id="bookingAddToCartBtn">Thêm vào giỏ hàng</button>
+                        <button type="submit" class="btn btn-outline-secondary" id="bookingPayAtCounterBtn">Thanh toán tại quầy</button>
+                        <button type="submit" class="btn btn-book" id="bookingPayOnlineBtn">Đặt & thanh toán online</button>
                     </div>
                 </form>
 
@@ -262,10 +273,18 @@
         const paymentStatusMsgEl = document.getElementById('paymentStatusMsg');
         const confirmPaymentSpinnerEl = document.getElementById('confirmPaymentSpinner');
         const paymentBackBtnEl = document.getElementById('paymentBackBtn');
+        const bookingActionInputEl = document.getElementById('bookingActionInput');
+        const paymentMethodInputEl = document.getElementById('paymentMethodInput');
         const paymentVerifiedEl = document.getElementById('paymentVerified');
         const paymentTransferNoteInputEl = document.getElementById('paymentTransferNoteInput');
+        const bookingAddToCartBtnEl = document.getElementById('bookingAddToCartBtn');
+        const bookingPayAtCounterBtnEl = document.getElementById('bookingPayAtCounterBtn');
+        const bookingPayOnlineBtnEl = document.getElementById('bookingPayOnlineBtn');
+        const bookingAjaxMessageEl = document.getElementById('bookingAjaxMessage');
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
         const checkPaymentUrl = @json(route('payment.sepay.webhook'));
         let allowDirectSubmit = false;
+        let pendingPaymentContext = null;
         const paymentModal = (window.bootstrap && paymentModalEl)
             ? new bootstrap.Modal(paymentModalEl)
             : null;
@@ -275,6 +294,80 @@
                 style: 'currency',
                 currency: 'VND',
             }).format(value || 0);
+        }
+
+        function setBookingAjaxMessage(type, message) {
+            if (!bookingAjaxMessageEl) {
+                return;
+            }
+
+            bookingAjaxMessageEl.className = `alert alert-${type} mb-0`;
+            bookingAjaxMessageEl.textContent = message;
+        }
+
+        function clearBookingAjaxMessage() {
+            if (!bookingAjaxMessageEl) {
+                return;
+            }
+
+            bookingAjaxMessageEl.className = 'alert d-none mb-0';
+            bookingAjaxMessageEl.textContent = '';
+        }
+
+        function buildAjaxErrorMessage(error, fallbackMessage) {
+            if (error && typeof error === 'object' && error.errors) {
+                return Object.values(error.errors).flat().join(' ');
+            }
+
+            if (error && typeof error.message === 'string' && error.message.trim() !== '') {
+                return error.message;
+            }
+
+            return fallbackMessage;
+        }
+
+        async function submitAddToCartAjax() {
+            if (!bookingFormEl.reportValidity()) {
+                return;
+            }
+
+            bookingActionInputEl.value = 'add_to_cart';
+            paymentMethodInputEl.value = 'counter';
+            paymentVerifiedEl.value = '0';
+            paymentTransferNoteInputEl.value = '';
+            clearBookingAjaxMessage();
+
+            const originalLabel = bookingAddToCartBtnEl.textContent;
+            bookingAddToCartBtnEl.disabled = true;
+            bookingAddToCartBtnEl.textContent = 'Đang thêm...';
+
+            try {
+                const response = await fetch(bookingFormEl.action, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN': csrfToken,
+                    },
+                    body: new FormData(bookingFormEl),
+                });
+
+                const data = await response.json().catch(() => ({}));
+
+                if (!response.ok) {
+                    throw data;
+                }
+
+                setBookingAjaxMessage('success', data.message || 'Đã thêm dịch vụ vào giỏ hàng.');
+                if (typeof window.updateCustomerCartUI === 'function') {
+                    window.updateCustomerCartUI(data.cart_count, { incrementBy: 1 });
+                }
+            } catch (error) {
+                setBookingAjaxMessage('danger', buildAjaxErrorMessage(error, 'Không thể thêm dịch vụ vào giỏ hàng lúc này.'));
+            } finally {
+                bookingAddToCartBtnEl.disabled = false;
+                bookingAddToCartBtnEl.textContent = originalLabel;
+            }
         }
 
         function resetPriceSummary() {
@@ -381,6 +474,7 @@
                 ngaySuDungEl.required = false;
                 soNguoiLonEl.required = false;
                 soTreEmEl.required = false;
+                tourSchedulesEl.required = false;
             } else if (type === 'tour') {
                 roomDateFields.style.display = 'none';
                 tourFields.style.display = 'block';
@@ -400,10 +494,12 @@
                 ngaySuDungEl.required = true;
                 soNguoiLonEl.required = false;
                 soTreEmEl.required = false;
+                tourSchedulesEl.required = false;
             } else {
                 roomDateFields.style.display = 'none';
                 tourFields.style.display = 'none';
                 otherDateFields.style.display = 'block';
+                tourSchedulesEl.required = false;
             }
 
             availableRoomsInfo.style.display = 'none';
@@ -688,14 +784,8 @@
         }
 
         function buildTransferNote() {
-            const sanitizeToken = (value) => String(value || 'NA')
-                .toUpperCase()
-                .replace(/[^A-Z0-9]+/g, '');
-
-            const prefix = sanitizeToken(paymentInfo.transfer_note_prefix || 'DATDICHVU');
-            const type = sanitizeToken(serviceTypeEl.value || 'NA');
-            const code = sanitizeToken(serviceCodeEl.value || 'NA');
-            return `${prefix}-${type}-${code}`;
+            const invoiceId = Number(paymentInfo.next_invoice_id || 0) || 0;
+            return `DATDICHVU-HD-${invoiceId}`;
         }
 
         function buildQrUrl(amount, transferNote) {
@@ -719,14 +809,17 @@
             return `https://img.vietqr.io/image/${encodeURIComponent(bankBin)}-${encodeURIComponent(accountNo)}-${encodeURIComponent(qrTemplate)}.png?${params}`;
         }
 
-        function openPaymentModalBeforeSubmit() {
-            if (!paymentModal) {
+        function openPaymentModalBeforeSubmit(context) {
+            if (!paymentModal || !context) {
                 setPaymentStatus('danger', 'Không thể mở hộp thoại xác nhận thanh toán. Vui lòng tải lại trang và thử lại.');
                 return;
             }
 
-            const amount = calculateEstimatedAmount();
-            const transferNote = buildTransferNote();
+            pendingPaymentContext = context;
+            allowDirectSubmit = false;
+
+            const amount = context.amount || 0;
+            const transferNote = context.transferNote || buildTransferNote();
             const qrUrl = buildQrUrl(amount, transferNote);
 
             paymentBankNameEl.textContent = paymentInfo.bank_name || 'Chưa cấu hình';
@@ -743,12 +836,16 @@
                 paymentQrImageEl.style.display = 'none';
             }
 
-            // Reset status khi mở modal mới
             confirmPaymentSubmitBtn.disabled = false;
             paymentStatusMsgEl.className = 'alert mb-0 d-none';
             paymentStatusMsgEl.textContent = '';
-            paymentVerifiedEl.value = '0';
-            paymentTransferNoteInputEl.value = '';
+
+            if (context.verifiedInput) {
+                context.verifiedInput.value = '0';
+            }
+            if (context.transferInput) {
+                context.transferInput.value = '';
+            }
 
             paymentModal.show();
         }
@@ -760,12 +857,11 @@
 
         async function verifyPayment() {
             const transferNote = paymentTransferNoteEl.textContent.trim();
-            if (!transferNote) {
+            if (!transferNote || !pendingPaymentContext) {
                 setPaymentStatus('warning', 'Không tìm thấy nội dung chuyển khoản để kiểm tra.');
                 return;
             }
 
-            // Loading state
             confirmPaymentSubmitBtn.disabled = true;
             confirmPaymentSpinnerEl.classList.remove('d-none');
             paymentBackBtnEl.disabled = true;
@@ -791,12 +887,11 @@
                 if (data.paid) {
                     setPaymentStatus('success', data.message || 'Xác nhận thanh toán thành công! Đang gửi yêu cầu...');
                     confirmPaymentSpinnerEl.classList.add('d-none');
-                    paymentVerifiedEl.value = '1';
-                    paymentTransferNoteInputEl.value = transferNote;
-                    // Tự submit sau 1.5 giây để người dùng thấy thông báo
+                    pendingPaymentContext.verifiedInput.value = '1';
+                    pendingPaymentContext.transferInput.value = transferNote;
                     setTimeout(() => {
                         allowDirectSubmit = true;
-                        bookingFormEl.submit();
+                        pendingPaymentContext.form.submit();
                     }, 1500);
                 } else {
                     setPaymentStatus('danger', data.message || 'Chưa tìm thấy biến động số dư. Vui lòng thử lại sau vài giây.');
@@ -825,13 +920,40 @@
             }
         }
 
+        bookingAddToCartBtnEl.addEventListener('click', (event) => {
+            event.preventDefault();
+            submitAddToCartAjax();
+        });
+
+        bookingPayAtCounterBtnEl.addEventListener('click', () => {
+            bookingActionInputEl.value = 'book_now';
+            paymentMethodInputEl.value = 'counter';
+            paymentVerifiedEl.value = '0';
+            paymentTransferNoteInputEl.value = '';
+        });
+
+        bookingPayOnlineBtnEl.addEventListener('click', () => {
+            bookingActionInputEl.value = 'book_now';
+            paymentMethodInputEl.value = 'online';
+        });
+
         bookingFormEl.addEventListener('submit', (event) => {
-            if (allowDirectSubmit) {
+            if (allowDirectSubmit && pendingPaymentContext?.form === bookingFormEl) {
+                return;
+            }
+
+            if (bookingActionInputEl.value === 'add_to_cart' || paymentMethodInputEl.value === 'counter') {
                 return;
             }
 
             event.preventDefault();
-            openPaymentModalBeforeSubmit();
+            openPaymentModalBeforeSubmit({
+                form: bookingFormEl,
+                amount: calculateEstimatedAmount(),
+                transferNote: buildTransferNote(),
+                verifiedInput: paymentVerifiedEl,
+                transferInput: paymentTransferNoteInputEl,
+            });
         });
 
         confirmPaymentSubmitBtn.addEventListener('click', verifyPayment);

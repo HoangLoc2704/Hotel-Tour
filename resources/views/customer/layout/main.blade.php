@@ -42,7 +42,7 @@
                         </li>
 
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ route('customer.booking') }}">Đặt phòng</a>
+                            <a class="nav-link" href="{{ route('customer.booking') }}">Đặt dịch vụ</a>
                         </li>
 
                         <li class="nav-item">
@@ -52,6 +52,10 @@
 
                     @if (session()->has('customer_user_id'))
                         <div class="d-flex align-items-center gap-2 customer-auth-box">
+                            <a href="{{ route('customer.cart') }}#cart-section" class="btn btn-outline-light btn-sm customer-login-btn position-relative" title="Giỏ hàng" aria-label="Giỏ hàng">
+                                Giỏ hàng
+                                <span class="customer-cart-badge {{ count(session('customer_cart', [])) > 0 ? '' : 'd-none' }}" data-cart-count-badge>{{ count(session('customer_cart', [])) }}</span>
+                            </a>
                             <a href="{{ route('customer.invoices') }}" class="btn btn-outline-light btn-sm customer-login-btn d-inline-flex align-items-center" title="Hóa đơn của tôi" aria-label="Hóa đơn của tôi">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
                                     <path d="M8 0a5 5 0 1 0 0 10A5 5 0 0 0 8 0zM4.5 5a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z"/>
@@ -65,7 +69,11 @@
                             </form>
                         </div>
                     @else
-                        <div class="d-flex gap-2">
+                        <div class="d-flex gap-2 align-items-center">
+                            <a href="{{ route('customer.cart') }}#cart-section" class="btn btn-outline-light btn-sm customer-login-btn position-relative" title="Giỏ hàng" aria-label="Giỏ hàng">
+                                Giỏ hàng
+                                <span class="customer-cart-badge {{ count(session('customer_cart', [])) > 0 ? '' : 'd-none' }}" data-cart-count-badge>{{ count(session('customer_cart', [])) }}</span>
+                            </a>
                             <a href="{{ route('customer.register') }}" class="btn btn-light btn-sm customer-login-btn">Đăng ký</a>
                             <a href="{{ route('customer.login') }}" class="btn btn-outline-light btn-sm customer-login-btn">Đăng nhập</a>
                         </div>
@@ -85,6 +93,35 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        window.getCurrentCustomerCartCount = function () {
+            const badge = document.querySelector('[data-cart-count-badge]');
+            const rawValue = badge?.textContent?.trim() ?? '0';
+            const parsed = Number(rawValue);
+            return Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
+        };
+
+        window.updateCustomerCartUI = function (count, options = {}) {
+            const currentCount = window.getCurrentCustomerCartCount();
+            const parsedCount = Number(count);
+            const incrementBy = Number(options.incrementBy ?? 0);
+            const fallbackCount = Number.isFinite(incrementBy)
+                ? currentCount + Math.max(0, incrementBy)
+                : currentCount;
+            const safeCount = Number.isFinite(parsedCount)
+                ? Math.max(0, parsedCount)
+                : Math.max(0, fallbackCount);
+
+            document.querySelectorAll('[data-cart-count-badge]').forEach((element) => {
+                element.textContent = String(safeCount);
+                element.classList.toggle('d-none', safeCount <= 0);
+            });
+
+            document.querySelectorAll('[data-cart-count-text]').forEach((element) => {
+                element.textContent = String(safeCount);
+            });
+        };
+    </script>
     @stack('scripts')
 </body>
 

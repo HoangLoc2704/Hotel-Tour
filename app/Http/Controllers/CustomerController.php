@@ -16,12 +16,14 @@ use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class CustomerController extends Controller
@@ -254,22 +256,8 @@ class CustomerController extends Controller
             ];
         })->values();
 
-        $customerProfile = null;
-        $customerId = Session::get('customer_user_id');
-        if ($customerId) {
-            $customerProfile = KhachHang::query()
-                ->select(['MaKH', 'TenKH', 'SDT', 'Email'])
-                ->find($customerId);
-        }
-
-        $paymentInfo = [
-            'bank_bin' => env('PAYMENT_BANK_BIN', '970422'),
-            'bank_name' => env('PAYMENT_BANK_NAME', 'MB'),
-            'account_no' => env('PAYMENT_ACCOUNT_NO', '0358178132'),
-            'account_name' => env('PAYMENT_ACCOUNT_NAME', 'NGUYEN THAI HOC'),
-            'transfer_note_prefix' => env('PAYMENT_TRANSFER_NOTE_PREFIX', 'DATDICHVU'),
-            'qr_template' => env('PAYMENT_QR_TEMPLATE', 'compact2'),
-        ];
+        $customerProfile = $this->getCustomerProfile();
+        $paymentInfo = $this->getPaymentInfo();
 
         return view('customer.booking', compact(
             'dichVus',
@@ -280,6 +268,21 @@ class CustomerController extends Controller
             'phongOptions',
             'tourOptions',
             'paymentInfo'
+        ));
+    }
+
+    public function cart(): View
+    {
+        $customerProfile = $this->getCustomerProfile();
+        $paymentInfo = $this->getPaymentInfo();
+        $cartItems = $this->getCartItems();
+        $cartSummary = $this->buildCartSummary($cartItems);
+
+        return view('customer.cart', compact(
+            'customerProfile',
+            'paymentInfo',
+            'cartItems',
+            'cartSummary'
         ));
     }
 
@@ -515,7 +518,10 @@ class CustomerController extends Controller
             ->orderBy('GiaPhong')
             ->get();
 
-        return view('customer.room-detail', compact('phong', 'relatedRooms'));
+        $customerProfile = $this->getCustomerProfile();
+        $paymentInfo = $this->getPaymentInfo();
+
+        return view('customer.room-detail', compact('phong', 'relatedRooms', 'customerProfile', 'paymentInfo'));
     }
 
     public function tourDetail(string $maTour): View
@@ -545,7 +551,10 @@ class CustomerController extends Controller
             ->limit(3)
             ->get();
 
-        return view('customer.tour-detail', compact('tour', 'relatedTours'));
+        $customerProfile = $this->getCustomerProfile();
+        $paymentInfo = $this->getPaymentInfo();
+
+        return view('customer.tour-detail', compact('tour', 'relatedTours', 'customerProfile', 'paymentInfo'));
     }
 
     public function serviceDetail(string $maDV): View
@@ -563,7 +572,484 @@ class CustomerController extends Controller
             ->limit(3)
             ->get();
 
-        return view('customer.service-detail', compact('dichVu', 'relatedServices'));
+        $customerProfile = $this->getCustomerProfile();
+        $paymentInfo = $this->getPaymentInfo();
+
+        return view('customer.service-detail', compact('dichVu', 'relatedServices', 'customerProfile', 'paymentInfo'));
+    }
+
+    private function getCustomerProfile(): ?KhachHang
+    {
+        $customerId = Session::get('customer_user_id');
+
+        if (!$customerId) {
+            return null;
+        }
+
+        return KhachHang::query()
+            ->select(['MaKH', 'TenKH', 'SDT', 'Email'])
+            ->find($customerId);
+    }
+
+    private function getPaymentInfo(): array
+    {
+        $nextInvoiceId = ((int) (HoaDon::query()->max('MaHD') ?? 0)) + 1;
+
+        return [
+            'bank_bin' => env('PAYMENT_BANK_BIN', '970422'),
+            'bank_name' => env('PAYMENT_BANK_NAME', 'MB'),
+            'account_no' => env('PAYMENT_ACCOUNT_NO', '0358178132'),
+            'account_name' => env('PAYMENT_ACCOUNT_NAME', 'NGUYEN THAI HOC'),
+            'transfer_note_prefix' => 'DATDICHVU-HD',
+            'next_invoice_id' => $nextInvoiceId,
+            'qr_template' => env('PAYMENT_QR_TEMPLATE', 'compact2'),
+        ];
+    }
+
+    private function getCartItems(): array
+    {
+        $cartItems = Session::get('customer_cart', []);
+
+        if (!is_array($cartItems)) {
+            return [];
+        }
+
+        return array_values(array_filter($cartItems, static function ($item) {
+            return is_array($item) && !empty($item['id']) && !empty($item['type']);
+        }));
+    }
+
+    private function buildCartSummary(array $cartItems): array
+    {
+        $total = array_reduce($cartItems, static function (float $carry, array $item): float {
+            return $carry + (float) ($item['estimated_total'] ?? 0);
+        }, 0.0);
+
+        return [
+            'count' => count($cartItems),
+            'total' => $total,
+        ];
+    }
+
+    private function storeGuestCheckoutProfile(array $validated): void
+    {
+        Session::put('customer_guest_profile', [
+            'ho_ten' => trim((string) ($validated['ho_ten'] ?? '')),
+            'so_dien_thoai' => trim((string) ($validated['so_dien_thoai'] ?? '')),
+            'email' => trim((string) ($validated['email'] ?? '')),
+        ]);
+    }
+
+    private function resolveCheckoutCustomerId(array $validated): string
+    {
+        $this->storeGuestCheckoutProfile($validated);
+
+        $customerId = Session::get('customer_user_id');
+        if (!empty($customerId)) {
+            return (string) $customerId;
+        }
+
+        $hoTen = trim((string) ($validated['ho_ten'] ?? ''));
+        $soDienThoai = trim((string) ($validated['so_dien_thoai'] ?? ''));
+        $email = trim((string) ($validated['email'] ?? ''));
+
+        $khachHang = KhachHang::query()
+            ->where('Email', $email)
+            ->orWhere('SDT', $soDienThoai)
+            ->first();
+
+        if ($khachHang) {
+            $updates = [];
+
+            if ((string) ($khachHang->TenKH ?? '') !== $hoTen) {
+                $updates['TenKH'] = $hoTen;
+            }
+            if ((string) ($khachHang->SDT ?? '') !== $soDienThoai) {
+                $updates['SDT'] = $soDienThoai;
+            }
+            if ((string) ($khachHang->Email ?? '') !== $email) {
+                $updates['Email'] = $email;
+            }
+            if (empty($khachHang->MatKhau)) {
+                $updates['MatKhau'] = Hash::make('123456');
+            }
+            if ((int) ($khachHang->TrangThai ?? 1) === 0) {
+                $updates['TrangThai'] = 1;
+            }
+
+            if (!empty($updates)) {
+                $khachHang->update($updates);
+            }
+
+            Session::put('customer_user_id', $khachHang->MaKH);
+            Session::put('customer_user_name', $khachHang->TenKH);
+            Session::put('customer_user_phone', $khachHang->SDT);
+            Session::put('customer_user_email', $khachHang->Email);
+
+            return (string) $khachHang->MaKH;
+        }
+
+        $khachHang = KhachHang::query()->create([
+            'TenKH' => $hoTen,
+            'SDT' => $soDienThoai,
+            'Email' => $email,
+            'MatKhau' => Hash::make('123456'),
+            'TrangThai' => 1,
+        ]);
+
+        Session::put('customer_user_id', $khachHang->MaKH);
+        Session::put('customer_user_name', $khachHang->TenKH);
+        Session::put('customer_user_phone', $khachHang->SDT);
+        Session::put('customer_user_email', $khachHang->Email);
+
+        return (string) $khachHang->MaKH;
+    }
+
+    private function buildBookingItem(array $validated): array
+    {
+        $type = (string) ($validated['loai_dich_vu'] ?? '');
+        $commonPayload = [
+            'loai_dich_vu' => $type,
+            'ma_dich_vu' => (string) ($validated['ma_dich_vu'] ?? ''),
+            'ngay_su_dung' => $validated['ngay_su_dung'] ?? null,
+            'ngay_nhan_phong' => $validated['ngay_nhan_phong'] ?? null,
+            'ngay_tra_phong' => $validated['ngay_tra_phong'] ?? null,
+            'ma_lich_khoi_hanh' => $validated['ma_lich_khoi_hanh'] ?? null,
+            'so_luong_khach' => (int) ($validated['so_luong_khach'] ?? 1),
+            'so_nguoi_lon' => (int) ($validated['so_nguoi_lon'] ?? 0),
+            'so_tre_em' => (int) ($validated['so_tre_em'] ?? 0),
+            'ghi_chu' => $validated['ghi_chu'] ?? null,
+        ];
+
+        if ($type === 'dich-vu') {
+            $dichVu = DichVu::query()
+                ->where('TrangThai', 1)
+                ->find($commonPayload['ma_dich_vu']);
+
+            if (!$dichVu) {
+                throw ValidationException::withMessages([
+                    'ma_dich_vu' => 'Dịch vụ đã chọn không tồn tại hoặc đang tạm ngưng.',
+                ]);
+            }
+
+            $soLuong = max(1, (int) $commonPayload['so_luong_khach']);
+            $unitPrice = (float) ($dichVu->GiaDV ?? 0);
+
+            return [
+                'id' => (string) Str::uuid(),
+                'type' => 'dich-vu',
+                'service_code' => (string) $dichVu->MaDV,
+                'service_name' => (string) $dichVu->TenDV,
+                'unit_price' => $unitPrice,
+                'quantity_label' => $soLuong . ' số lượng',
+                'schedule_label' => 'Ngày sử dụng: ' . Carbon::parse($commonPayload['ngay_su_dung'])->format('d/m/Y'),
+                'estimated_total' => $unitPrice * $soLuong,
+                'payload' => array_merge($commonPayload, [
+                    'so_luong_khach' => $soLuong,
+                ]),
+            ];
+        }
+
+        if ($type === 'phong') {
+            $tenPhong = $commonPayload['ma_dich_vu'];
+            $phong = Phong::query()
+                ->where('TenPhong', $tenPhong)
+                ->orderBy('GiaPhong')
+                ->first();
+
+            if (!$phong) {
+                throw ValidationException::withMessages([
+                    'ma_dich_vu' => 'Loại phòng đã chọn không tồn tại.',
+                ]);
+            }
+
+            $availableRoom = $this->findSmallestAvailableRoomByDateRange(
+                $tenPhong,
+                (string) $commonPayload['ngay_nhan_phong'],
+                (string) $commonPayload['ngay_tra_phong']
+            );
+
+            if (!$availableRoom) {
+                throw ValidationException::withMessages([
+                    'ma_dich_vu' => 'Không còn phòng trống loại này trong khoảng thời gian đã chọn.',
+                ]);
+            }
+
+            $soDem = max(
+                1,
+                Carbon::parse((string) $commonPayload['ngay_nhan_phong'])
+                    ->diffInDays(Carbon::parse((string) $commonPayload['ngay_tra_phong']))
+            );
+            $unitPrice = (float) ($phong->GiaPhong ?? 0);
+
+            return [
+                'id' => (string) Str::uuid(),
+                'type' => 'phong',
+                'service_code' => $tenPhong,
+                'service_name' => (string) $phong->TenPhong,
+                'unit_price' => $unitPrice,
+                'quantity_label' => $soDem . ' đêm',
+                'schedule_label' => 'Nhận ' . Carbon::parse((string) $commonPayload['ngay_nhan_phong'])->format('d/m/Y') . ' · Trả ' . Carbon::parse((string) $commonPayload['ngay_tra_phong'])->format('d/m/Y'),
+                'estimated_total' => $unitPrice * $soDem,
+                'payload' => $commonPayload,
+            ];
+        }
+
+        if ($type === 'tour') {
+            $maLichKhoiHanh = (string) ($commonPayload['ma_lich_khoi_hanh'] ?? '');
+            $lichKhoiHanh = LichKhoiHanh::query()
+                ->with('tour:MaTour,TenTour,GiaTourNguoiLon,GiaTourTreEm')
+                ->find($maLichKhoiHanh);
+
+            if (!$lichKhoiHanh || (string) $lichKhoiHanh->MaTour !== (string) $commonPayload['ma_dich_vu']) {
+                throw ValidationException::withMessages([
+                    'ma_lich_khoi_hanh' => 'Lịch khởi hành không hợp lệ cho tour đã chọn.',
+                ]);
+            }
+
+            $soNguoiLon = max(0, (int) $commonPayload['so_nguoi_lon']);
+            $soTreEm = max(0, (int) $commonPayload['so_tre_em']);
+            $tongNguoi = $soNguoiLon + $soTreEm;
+
+            if ($tongNguoi <= 0) {
+                throw ValidationException::withMessages([
+                    'so_nguoi_lon' => 'Số lượng khách tham gia tour phải lớn hơn 0.',
+                ]);
+            }
+
+            if ($tongNguoi > (int) $lichKhoiHanh->SoChoConLai) {
+                throw ValidationException::withMessages([
+                    'ma_lich_khoi_hanh' => 'Số chỗ còn lại không đủ cho lựa chọn hiện tại.',
+                ]);
+            }
+
+            $tour = $lichKhoiHanh->tour;
+            $giaNguoiLon = (float) ($tour->GiaTourNguoiLon ?? 0);
+            $giaTreEm = (float) ($tour->GiaTourTreEm ?? 0);
+
+            return [
+                'id' => (string) Str::uuid(),
+                'type' => 'tour',
+                'service_code' => (string) $tour->MaTour,
+                'service_name' => (string) $tour->TenTour,
+                'unit_price' => $giaNguoiLon,
+                'quantity_label' => $soNguoiLon . ' NL, ' . $soTreEm . ' TE',
+                'schedule_label' => 'Khởi hành ' . Carbon::parse((string) $lichKhoiHanh->NgayKhoiHanh)->format('d/m/Y') . ' · Kết thúc ' . Carbon::parse((string) $lichKhoiHanh->NgayKetThuc)->format('d/m/Y'),
+                'estimated_total' => ($soNguoiLon * $giaNguoiLon) + ($soTreEm * $giaTreEm),
+                'payload' => array_merge($commonPayload, [
+                    'so_nguoi_lon' => $soNguoiLon,
+                    'so_tre_em' => $soTreEm,
+                ]),
+            ];
+        }
+
+        throw ValidationException::withMessages([
+            'loai_dich_vu' => 'Loại dịch vụ không hợp lệ.',
+        ]);
+    }
+
+    private function createInvoiceFromBookingItems($customerId, array $bookingItems, int $paymentValue): HoaDon
+    {
+        return DB::transaction(function () use ($customerId, $bookingItems, $paymentValue) {
+            $hoaDon = HoaDon::create([
+                'MaKH' => $customerId,
+                'NgayTao' => now(),
+                'ThanhTien' => 0,
+                'TrangThai' => 1,
+                'ThanhToan' => $paymentValue,
+            ]);
+
+            foreach ($bookingItems as $bookingItem) {
+                $payload = $bookingItem['payload'] ?? [];
+                $type = $bookingItem['type'] ?? ($payload['loai_dich_vu'] ?? null);
+
+                if ($type === 'phong') {
+                    $maPhong = $this->findSmallestAvailableRoomByDateRange(
+                        (string) ($payload['ma_dich_vu'] ?? ''),
+                        (string) ($payload['ngay_nhan_phong'] ?? ''),
+                        (string) ($payload['ngay_tra_phong'] ?? '')
+                    );
+
+                    if (!$maPhong) {
+                        throw ValidationException::withMessages([
+                            'ma_dich_vu' => 'Không còn phòng trống cho lựa chọn trong giỏ hàng.',
+                        ]);
+                    }
+
+                    $phong = Phong::query()->findOrFail($maPhong);
+                    $soDem = max(
+                        1,
+                        Carbon::parse((string) ($payload['ngay_nhan_phong'] ?? now()->toDateString()))
+                            ->diffInDays(Carbon::parse((string) ($payload['ngay_tra_phong'] ?? now()->addDay()->toDateString())))
+                    );
+
+                    HDPhong::create([
+                        'MaHD' => $hoaDon->MaHD,
+                        'MaPhong' => $maPhong,
+                        'NgayNhanPhong' => $payload['ngay_nhan_phong'],
+                        'NgayTraPhong' => $payload['ngay_tra_phong'],
+                        'TongTien' => ((float) ($phong->GiaPhong ?? 0)) * $soDem,
+                        'TrangThai' => 1,
+                        'ThanhToan' => $paymentValue,
+                    ]);
+
+                    continue;
+                }
+
+                if ($type === 'dich-vu') {
+                    $dichVu = DichVu::query()
+                        ->where('TrangThai', 1)
+                        ->findOrFail($payload['ma_dich_vu'] ?? null);
+                    $soLuong = max(1, (int) ($payload['so_luong_khach'] ?? 1));
+
+                    HDDichVu::create([
+                        'MaHD' => $hoaDon->MaHD,
+                        'MaDV' => $dichVu->MaDV,
+                        'SoLuong' => $soLuong,
+                        'TongTien' => ((float) ($dichVu->GiaDV ?? 0)) * $soLuong,
+                        'TrangThai' => 1,
+                        'ThanhToan' => $paymentValue,
+                    ]);
+
+                    continue;
+                }
+
+                if ($type === 'tour') {
+                    $lichKhoiHanh = LichKhoiHanh::query()
+                        ->with('tour:MaTour,TenTour,GiaTourNguoiLon,GiaTourTreEm')
+                        ->lockForUpdate()
+                        ->findOrFail($payload['ma_lich_khoi_hanh'] ?? null);
+
+                    if ((string) $lichKhoiHanh->MaTour !== (string) ($payload['ma_dich_vu'] ?? '')) {
+                        throw ValidationException::withMessages([
+                            'ma_lich_khoi_hanh' => 'Lịch khởi hành trong giỏ hàng không còn hợp lệ.',
+                        ]);
+                    }
+
+                    $soNguoiLon = max(0, (int) ($payload['so_nguoi_lon'] ?? 0));
+                    $soTreEm = max(0, (int) ($payload['so_tre_em'] ?? 0));
+                    $tongNguoi = $soNguoiLon + $soTreEm;
+
+                    if ($tongNguoi <= 0 || $tongNguoi > (int) $lichKhoiHanh->SoChoConLai) {
+                        throw ValidationException::withMessages([
+                            'ma_lich_khoi_hanh' => 'Số chỗ tour không còn đủ để hoàn tất thanh toán.',
+                        ]);
+                    }
+
+                    $tour = $lichKhoiHanh->tour;
+                    $tongTienTour = ($soNguoiLon * (float) ($tour->GiaTourNguoiLon ?? 0))
+                        + ($soTreEm * (float) ($tour->GiaTourTreEm ?? 0));
+
+                    HDTOUR::create([
+                        'MaHD' => $hoaDon->MaHD,
+                        'MaLKH' => $lichKhoiHanh->MaLKH,
+                        'SoNguoiLon' => $soNguoiLon,
+                        'SoTreEm' => $soTreEm,
+                        'TongTien' => $tongTienTour,
+                        'TrangThai' => 1,
+                        'ThanhToan' => $paymentValue,
+                    ]);
+
+                    $lichKhoiHanh->decrement('SoChoConLai', $tongNguoi);
+                }
+            }
+
+            HoaDon::recalculateThanhTien($hoaDon->MaHD);
+
+            return $hoaDon->fresh() ?? $hoaDon;
+        });
+    }
+
+    public function removeCartItem(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'item_id' => 'required|string',
+        ]);
+
+        $cartItems = array_values(array_filter($this->getCartItems(), function (array $item) use ($validated) {
+            return (string) ($item['id'] ?? '') !== (string) $validated['item_id'];
+        }));
+
+        Session::put('customer_cart', $cartItems);
+
+        return redirect()->route('customer.cart')->with('success', 'Đã xóa dịch vụ khỏi giỏ hàng.');
+    }
+
+    public function checkoutCart(Request $request): RedirectResponse
+    {
+        $cartItems = $this->getCartItems();
+        if (empty($cartItems)) {
+            return redirect()->route('customer.cart')->withErrors([
+                'error' => 'Giỏ hàng đang trống, vui lòng thêm dịch vụ trước khi thanh toán.',
+            ]);
+        }
+
+        $validated = $request->validate([
+            'ho_ten' => 'required|string|max:100',
+            'so_dien_thoai' => 'required|string|max:20',
+            'email' => 'required|email|max:100',
+            'payment_method' => 'required|in:online,counter',
+            'payment_verified' => 'nullable|in:0,1',
+            'payment_transfer_note' => 'nullable|string|max:200',
+        ]);
+
+        $customerId = $this->resolveCheckoutCustomerId($validated);
+
+        if ($validated['payment_method'] === 'online') {
+            $isPaid = (
+                (string) ($validated['payment_verified'] ?? '0') === '1'
+                && !empty($validated['payment_transfer_note'])
+                && $this->findMatchedPaymentRecord((string) $validated['payment_transfer_note']) !== null
+            );
+
+            if (!$isPaid) {
+                return redirect()->route('customer.cart')->withErrors([
+                    'error' => 'Vui lòng xác nhận thanh toán online thành công trước khi hoàn tất giỏ hàng.',
+                ]);
+            }
+        }
+
+        try {
+            $normalizedItems = [];
+            foreach ($cartItems as $cartItem) {
+                $payload = $cartItem['payload'] ?? null;
+                if (!is_array($payload)) {
+                    continue;
+                }
+
+                $normalizedItems[] = $this->buildBookingItem($payload);
+            }
+
+            if (empty($normalizedItems)) {
+                return redirect()->route('customer.cart')->withErrors([
+                    'error' => 'Không có mục hợp lệ trong giỏ hàng để thanh toán.',
+                ]);
+            }
+
+            $paymentValue = $validated['payment_method'] === 'online' ? 1 : 0;
+            $hoaDon = $this->createInvoiceFromBookingItems($customerId, $normalizedItems, $paymentValue);
+
+            Session::forget('customer_cart');
+
+            $message = $paymentValue === 1
+                ? 'Thanh toán giỏ hàng thành công.'
+                : 'Đã lưu hóa đơn giỏ hàng ở trạng thái chưa thanh toán để thanh toán tại quầy.';
+
+            return redirect()
+                ->route('customer.invoices.show', $hoaDon->MaHD)
+                ->with('success', $message);
+        } catch (ValidationException $e) {
+            return redirect()->route('customer.cart')->withErrors($e->errors());
+        } catch (\Throwable $e) {
+            Log::error('Customer cart checkout failed', [
+                'message' => $e->getMessage(),
+                'customer_id' => $customerId,
+            ]);
+
+            return redirect()->route('customer.cart')->withErrors([
+                'error' => 'Không thể xử lý giỏ hàng lúc này. Vui lòng thử lại.',
+            ]);
+        }
     }
 
     public function storeBooking(Request $request): RedirectResponse
@@ -571,30 +1057,24 @@ class CustomerController extends Controller
         $loaiDichVu = $request->input('loai_dich_vu');
         $customerId = Session::get('customer_user_id');
 
-        if (!$customerId) {
-            return back()
-                ->withErrors(['error' => 'Vui lòng đăng nhập tài khoản khách hàng trước khi đặt dịch vụ.'])
-                ->withInput();
-        }
-
-        // Validation rules
         $rules = [
             'ho_ten' => 'required|string|max:100',
             'so_dien_thoai' => 'required|string|max:20',
-            'email' => 'nullable|email|max:100',
+            'email' => 'required|email|max:100',
             'loai_dich_vu' => 'required|in:dich-vu,phong,tour',
             'ma_dich_vu' => 'required|string|max:30',
             'so_luong_khach' => 'nullable|integer|min:1|max:50',
             'ghi_chu' => 'nullable|string|max:500',
+            'booking_action' => 'nullable|in:add_to_cart,book_now',
+            'payment_method' => 'nullable|in:online,counter',
             'payment_verified' => 'nullable|in:0,1',
             'payment_transfer_note' => 'nullable|string|max:200',
         ];
 
-        // Validate thuộc tính riêng của từng loại dịch vụ
         if ($loaiDichVu === 'phong') {
             $rules['ngay_nhan_phong'] = 'required|date|after_or_equal:today';
             $rules['ngay_tra_phong'] = 'required|date|after:ngay_nhan_phong';
-        } else if ($loaiDichVu === 'tour') {
+        } elseif ($loaiDichVu === 'tour') {
             $rules['ma_lich_khoi_hanh'] = 'required|string|max:30';
             $rules['so_nguoi_lon'] = 'required|integer|min:0|max:50';
             $rules['so_tre_em'] = 'required|integer|min:0|max:50';
@@ -603,152 +1083,73 @@ class CustomerController extends Controller
         }
 
         $validated = $request->validate($rules);
-        $isPaid = (
-            (string) ($validated['payment_verified'] ?? '0') === '1'
-            && !empty($validated['payment_transfer_note'])
-            && $this->findMatchedPaymentRecord((string) $validated['payment_transfer_note']) !== null
-        );
+        $validated['booking_action'] = $validated['booking_action'] ?? 'book_now';
+        $validated['payment_method'] = $validated['payment_method'] ?? 'online';
 
-        if (!$isPaid) {
-            return back()->withErrors([
-                'error' => 'Vui lòng bấm xác nhận thanh toán và chỉ gửi yêu cầu khi hệ thống báo thanh toán thành công.',
-            ])->withInput();
-        }
+        try {
+            $this->storeGuestCheckoutProfile($validated);
+            $bookingItem = $this->buildBookingItem($validated);
 
-        $paymentValue = 1;
+            if ($validated['booking_action'] === 'add_to_cart') {
+                $cartItems = $this->getCartItems();
+                $cartItems[] = $bookingItem;
+                Session::put('customer_cart', $cartItems);
 
-        $maDichVu = $validated['ma_dich_vu'];
+                $message = 'Đã thêm dịch vụ vào giỏ hàng của bạn.';
+                $cartSummary = $this->buildCartSummary($cartItems);
 
-        // Nếu đặt phòng, tìm phòng có mã nhỏ nhất trống trong khoảng ngày
-        if ($loaiDichVu === 'phong') {
-            $maDichVu = $this->findSmallestAvailableRoomByDateRange(
-                $validated['ma_dich_vu'],
-                $validated['ngay_nhan_phong'],
-                $validated['ngay_tra_phong']
-            );
-            
-            if (!$maDichVu) {
-                return back()->withErrors(['ma_dich_vu' => 'Không còn phòng trống loại này trong khoảng thời gian đã chọn.'])->withInput();
+                if ($request->expectsJson() || $request->ajax()) {
+                    return response()->json([
+                        'success' => true,
+                        'message' => $message,
+                        'cart_count' => $cartSummary['count'],
+                        'cart_total' => $cartSummary['total'],
+                    ]);
+                }
+
+                return redirect()
+                    ->route('customer.cart')
+                    ->with('success', $message);
             }
 
-            // Create invoice and detail
-            try {
-                $hoaDon = HoaDon::create([
-                    'MaKH' => $customerId,
-                    'NgayTao' => now(),
-                    'ThanhTien' => 0,
-                    'TrangThai' => 1,
-                    'ThanhToan' => $paymentValue,
-                ]);
+            $customerId = $this->resolveCheckoutCustomerId($validated);
 
-                $phong = Phong::query()->findOrFail($maDichVu);
-                $giaPhong = (float) ($phong->GiaPhong ?? 0);
-                $soDem = max(
-                    1,
-                    Carbon::parse($validated['ngay_nhan_phong'])->diffInDays(Carbon::parse($validated['ngay_tra_phong']))
+            if ($validated['payment_method'] === 'online') {
+                $isPaid = (
+                    (string) ($validated['payment_verified'] ?? '0') === '1'
+                    && !empty($validated['payment_transfer_note'])
+                    && $this->findMatchedPaymentRecord((string) $validated['payment_transfer_note']) !== null
                 );
-                $tongTienPhong = $giaPhong * $soDem;
 
-                HDPhong::create([
-                    'MaHD' => $hoaDon->MaHD,
-                    'MaPhong' => $maDichVu,
-                    'NgayNhanPhong' => $validated['ngay_nhan_phong'],
-                    'NgayTraPhong' => $validated['ngay_tra_phong'],
-                    'TongTien' => $tongTienPhong,
-                    'TrangThai' => 1,
-                    'ThanhToan' => $paymentValue,
-                ]);
-
-                HoaDon::recalculateThanhTien($hoaDon->MaHD);
-
-                return back()->with('success', 'Yêu cầu đặt phòng đã được ghi nhận. Chúng tôi sẽ liên hệ với bạn sớm nhất.');
-            } catch (\Exception $e) {
-                return back()->withErrors(['error' => 'Lỗi khi tạo đơn đặt phòng. Vui lòng thử lại.'])->withInput();
-            }
-        }
-
-        if ($loaiDichVu === 'dich-vu') {
-            try {
-                $hoaDon = HoaDon::create([
-                    'MaKH' => $customerId,
-                    'NgayTao' => now(),
-                    'ThanhTien' => 0,
-                    'TrangThai' => 1,
-                    'ThanhToan' => $paymentValue,
-                ]);
-
-                $dichVu = DichVu::query()->findOrFail($maDichVu);
-                $soLuong = max(1, (int) ($validated['so_luong_khach'] ?? 1));
-                $tongTienDichVu = (float) ($dichVu->GiaDV ?? 0) * $soLuong;
-
-                HDDichVu::create([
-                    'MaHD' => $hoaDon->MaHD,
-                    'MaDV' => $maDichVu,
-                    'SoLuong' => $soLuong,
-                    'TongTien' => $tongTienDichVu,
-                    'TrangThai' => 1,
-                    'ThanhToan' => $paymentValue,
-                ]);
-
-                HoaDon::recalculateThanhTien($hoaDon->MaHD);
-
-                return back()->with('success', 'Yêu cầu đặt dịch vụ đã được ghi nhận. Chúng tôi sẽ liên hệ với bạn sớm nhất.');
-            } catch (\Exception $e) {
-                return back()->withErrors(['error' => 'Lỗi khi tạo đơn dịch vụ. Vui lòng thử lại.'])->withInput();
-            }
-        }
-
-        // Handle tour booking
-        if ($loaiDichVu === 'tour') {
-            try {
-                $hoaDon = HoaDon::create([
-                    'MaKH' => $customerId,
-                    'NgayTao' => now(),
-                    'ThanhTien' => 0,
-                    'TrangThai' => 1,
-                    'ThanhToan' => $paymentValue,
-                ]);
-
-                $maLKH = $validated['ma_lich_khoi_hanh'];
-                $soNguoiLon = (int) ($validated['so_nguoi_lon'] ?? 0);
-                $soTreEm = (int) ($validated['so_tre_em'] ?? 0);
-                $soNguoiDat = $soNguoiLon + $soTreEm;
-
-                // Get tour and schedule information to calculate price
-                $lichKhoiHanh = LichKhoiHanh::query()->findOrFail($maLKH);
-                $tour = $lichKhoiHanh->tour;
-
-                if ($soNguoiDat <= 0) {
-                    return back()->withErrors(['so_nguoi_lon' => 'Số lượng người đặt tour phải lớn hơn 0.'])->withInput();
+                if (!$isPaid) {
+                    return back()->withErrors([
+                        'error' => 'Vui lòng xác nhận thanh toán online thành công trước khi gửi yêu cầu đặt dịch vụ.',
+                    ])->withInput();
                 }
-
-                if ($soNguoiDat > (int) $lichKhoiHanh->SoChoConLai) {
-                    return back()->withErrors(['ma_lich_khoi_hanh' => 'Số chỗ còn lại không đủ cho số lượng khách đã chọn.'])->withInput();
-                }
-
-                $giaNguoiLon = (float) ($tour->GiaTourNguoiLon ?? 0);
-                $giaTreEm = (float) ($tour->GiaTourTreEm ?? 0);
-                $tongTienTour = ($soNguoiLon * $giaNguoiLon) + ($soTreEm * $giaTreEm);
-
-                HDTOUR::create([
-                    'MaHD' => $hoaDon->MaHD,
-                    'MaLKH' => $maLKH,
-                    'SoNguoiLon' => $soNguoiLon,
-                    'SoTreEm' => $soTreEm,
-                    'TongTien' => $tongTienTour,
-                    'TrangThai' => 1,
-                    'ThanhToan' => $paymentValue,
-                ]);
-
-                // Decrement available seats in tour schedule
-                $lichKhoiHanh->decrement('SoChoConLai', $soNguoiDat);
-
-                HoaDon::recalculateThanhTien($hoaDon->MaHD);
-
-                return back()->with('success', 'Yêu cầu đặt tour du lịch đã được ghi nhận. Chúng tôi sẽ liên hệ với bạn sớm nhất.');
-            } catch (\Exception $e) {
-                return back()->withErrors(['error' => 'Lỗi khi tạo đơn tour du lịch. Vui lòng thử lại.'])->withInput();
             }
+
+            $paymentValue = $validated['payment_method'] === 'online' ? 1 : 0;
+            $hoaDon = $this->createInvoiceFromBookingItems($customerId, [$bookingItem], $paymentValue);
+
+            $message = $paymentValue === 1
+                ? 'Đặt dịch vụ thành công và hệ thống đã ghi nhận thanh toán online.'
+                : 'Đặt dịch vụ thành công. Hóa đơn hiện đang ở trạng thái chưa thanh toán để xử lý tại quầy.';
+
+            return redirect()
+                ->route('customer.invoices.show', $hoaDon->MaHD)
+                ->with('success', $message);
+        } catch (ValidationException $e) {
+            throw $e;
+        } catch (\Throwable $e) {
+            Log::error('Customer booking failed', [
+                'message' => $e->getMessage(),
+                'customer_id' => $customerId,
+                'loai_dich_vu' => $loaiDichVu,
+            ]);
+
+            return back()->withErrors([
+                'error' => 'Không thể xử lý yêu cầu đặt dịch vụ lúc này. Vui lòng thử lại.',
+            ])->withInput();
         }
     }
 

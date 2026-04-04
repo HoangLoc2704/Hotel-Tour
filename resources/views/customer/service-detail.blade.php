@@ -12,9 +12,23 @@
                 <p class="detail-muted">Mã dịch vụ: {{ $dichVu->MaDV }}</p>
                 <p>Dịch vụ được cung cấp với tiêu chuẩn vận hành đồng nhất, phù hợp đa dạng nhu cầu của khách lưu trú và khách tham quan.</p>
                 <div class="detail-price">{{ number_format($dichVu->GiaDV ?? 0, 0, ',', '.') }} VND</div>
-                <a href="{{ route('customer.booking', ['loai_dich_vu' => 'dich-vu', 'ma_dich_vu' => $dichVu->MaDV]) }}" class="btn btn-book mt-3">Đặt dịch vụ ngay</a>
+                <div class="mt-3 d-flex flex-wrap gap-2">
+                    <a href="#booking-inline" class="btn btn-book">Đặt ngay tại trang này</a>
+                    <a href="{{ route('customer.cart') }}#cart-section" class="btn btn-outline-success">Mở giỏ hàng</a>
+                </div>
             </div>
         </section>
+
+        <div id="booking-inline">
+            @include('customer.partials.detail-booking-form', [
+                'serviceType' => 'dich-vu',
+                'serviceCode' => $dichVu->MaDV,
+                'serviceName' => $dichVu->TenDV,
+                'unitPrice' => (float) ($dichVu->GiaDV ?? 0),
+                'customerProfile' => $customerProfile,
+                'paymentInfo' => $paymentInfo,
+            ])
+        </div>
 
         <section class="mt-4">
             <div class="section-title-wrap">
