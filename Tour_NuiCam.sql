@@ -38,23 +38,23 @@ CREATE TABLE tbl_KhachHang (
 -- ================= LOAI PHONG =================
 CREATE TABLE tbl_LoaiPhong(
 	MaLoai INT AUTO_INCREMENT PRIMARY KEY,
-	TenLoai VARCHAR(50) NOT NULL
+	TenLoai VARCHAR(50) NOT NULL,
+	GiaPhong DOUBLE,
+	SoLuongNguoi INT,
+	HinhAnh VARCHAR(255),
+	MoTa VARCHAR(255)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ================= PHONG =================
 CREATE TABLE tbl_Phong (
-	MaPhong VARCHAR(10) PRIMARY KEY,
-	TenPhong VARCHAR(100),
-	GiaPhong DOUBLE,
-	SoLuongNguoi INT,
-	HinhAnh VARCHAR(255),
-	MoTa VARCHAR(255),
+	MaPhong int AUTO_INCREMENT PRIMARY KEY,
+	TenPhong VARCHAR(10),
 	MaLoai INT NOT NULL,
 	FOREIGN KEY (MaLoai) REFERENCES tbl_LoaiPhong(MaLoai)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 
--- ================= HUONG DAN VIEN =================
+
 CREATE TABLE tbl_HuongDanVien(
     MaHDV INT AUTO_INCREMENT PRIMARY KEY,
     TenHDV VARCHAR(50) NOT NULL,
@@ -65,99 +65,125 @@ CREATE TABLE tbl_HuongDanVien(
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 
--- ================= HOA DON =================
-CREATE TABLE tbl_HoaDon (
-	MaHD INT AUTO_INCREMENT PRIMARY KEY,
-	MaKH INT NOT NULL,
-	NgayTao Date,
-	ThanhTien Double,
-	TrangThai BOOLEAN default 1,
-	FOREIGN KEY (MaKH) REFERENCES tbl_KhachHang(MaKH)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- ================= TOUR =================
-CREATE TABLE tbl_TOUR (
-    MaTour VARCHAR(20) PRIMARY KEY,
-    TenTour VARCHAR(100) NOT NULL,
-    GiaTourNguoiLon DOUBLE,
-	GiaTourTreEm DOUBLE,
-	ThoiLuong INT NOT NULL,
-    DiaDiemKhoiHanh VARCHAR(255),
-    SoLuongKhachToiDa INT,
-	HinhAnh VARCHAR(255),
-	MoTa VarChar(255),
-	LichTrinh VARCHAR (255),
-	TrangThai BOOLEAN default 1
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+	CREATE TABLE tbl_HoaDon (
+		MaHD INT AUTO_INCREMENT PRIMARY KEY,
+		MaKH INT NOT NULL,
+		NgayTao Date,
+		ThanhTien Double,
+		TrangThai BOOLEAN default 0,
+		ThanhToan BOOLEAN default 0
+		FOREIGN KEY (MaKH) REFERENCES tbl_KhachHang(MaKH)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 
-CREATE TABLE tbl_LichKhoiHanh (
-    MaLKH INT AUTO_INCREMENT PRIMARY KEY,
-    MaTour VARCHAR(20) NOT NULL,
-    NgayKhoiHanh DATE,
-    NgayKetThuc DATE,
-    SoChoConLai INT,
-	MaHDV INT NOT NULL,
-    TaiXe VARCHAR (100),
-    PhuongTien VARCHAR(100), 
-    FOREIGN KEY (MaHDV) REFERENCES tbl_HuongDanVien(MaHDV),
-    FOREIGN KEY (MaTour) REFERENCES tbl_TOUR(MaTour)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- ================= HOA DON TOUR =================
-CREATE TABLE tbl_HDTOUR (
-	MaHD INT NOT NULL,
-	MaLKH INT NOT NULL,
-	SoNguoiLon INT,
-	SoTreEm INT,
-	TongTien DOUBLE,
-	TrangThai BOOLEAN default 1,
-	PRIMARY KEY (MaHD, MaLKH),
-	FOREIGN KEY (MaLKH) REFERENCES tbl_LichKhoiHanh(MaLKH),
-	FOREIGN KEY (MaHD) REFERENCES tbl_HoaDon(MaHD)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+	CREATE TABLE tbl_TOUR (
+		MaTour VARCHAR(20) PRIMARY KEY,
+		TenTour VARCHAR(100) NOT NULL,
+		GiaTourNguoiLon DOUBLE,
+		GiaTourTreEm DOUBLE,
+		ThoiLuong INT NOT NULL,
+		DiaDiemKhoiHanh VARCHAR(255),
+		SoLuongKhachToiDa INT,
+		HinhAnh VARCHAR(255),
+		MoTa VarChar(255),
+		LichTrinh VARCHAR (255),
+		TrangThai BOOLEAN default 1
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 
--- ================= DICH VU =================
-CREATE TABLE tbl_DichVu(
-    MaDV INT AUTO_INCREMENT PRIMARY KEY,
-    TenDV VARCHAR(50) NOT NULL,
-	GiaDV DOUBLE,
-	TrangThai BOOLEAN DEFAULT 1
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+	CREATE TABLE tbl_LichKhoiHanh (
+		MaLKH INT AUTO_INCREMENT PRIMARY KEY,
+		MaTour VARCHAR(20) NOT NULL,
+		NgayKhoiHanh DATE,
+		NgayKetThuc DATE,
+		SoChoConLai INT,
+		MaHDV INT NOT NULL,
+		TaiXe VARCHAR (100),
+		PhuongTien VARCHAR(100), 
+		FOREIGN KEY (MaHDV) REFERENCES tbl_HuongDanVien(MaHDV),
+		FOREIGN KEY (MaTour) REFERENCES tbl_TOUR(MaTour)
+	)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE tbl_HDDichVu(
-	MaHD INT NOT NULL,
-    MaDV INT NOT NULL,
-    SoLuong INT,
-	TongTien DOUBLE,
-	TrangThai BOOLEAN DEFAULT 1,
-	PRIMARY KEY (MaHD, MaDV),
-	FOREIGN KEY (MaHD) REFERENCES tbl_HoaDon(MaHD),
-	FOREIGN KEY (MaDV) REFERENCES tbl_DichVu(MaDV)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE tbl_HDPhong(
-	MaHD INT NOT NULL,
-    	MaPhong varchar(10) NOT NULL,
-	NgayNhanPhong Date,
-	NgayTraPhong Date,
-	TongTien DOUBLE,
-	TrangThai BOOLEAN DEFAULT 1,
-	PRIMARY KEY (MaHD, MaPhong),
-	FOREIGN KEY (MaHD) REFERENCES tbl_HoaDon(MaHD),
-	FOREIGN KEY (MaPhong) REFERENCES tbl_Phong(MaPhong)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+	CREATE TABLE tbl_HDTOUR (
+		MaHD INT NOT NULL,
+		MaLKH INT NOT NULL,
+		SoNguoiLon INT,
+		SoTreEm INT,
+		TongTien DOUBLE,
+		TrangThai BOOLEAN default 1,
+		ThanhToan BOOLEAN DEFAULT 0,
+		PRIMARY KEY (MaHD, MaLKH),
+		FOREIGN KEY (MaLKH) REFERENCES tbl_LichKhoiHanh(MaLKH),
+		FOREIGN KEY (MaHD) REFERENCES tbl_HoaDon(MaHD)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- ============insert========
 
--- ================= CHUC VU =================
+
+	CREATE TABLE tbl_DichVu(
+		MaDV INT AUTO_INCREMENT PRIMARY KEY,
+		TenDV VARCHAR(50) NOT NULL,
+		GiaDV DOUBLE,
+		TrangThai BOOLEAN DEFAULT 1
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+	CREATE TABLE tbl_HDDichVu(
+		MaHD INT NOT NULL,
+		MaDV INT NOT NULL,
+		SoLuong INT,
+		TongTien DOUBLE,
+		TrangThai BOOLEAN DEFAULT 1,
+		ThanhToan BOOLEAN DEFAULT 0,
+		PRIMARY KEY (MaHD, MaDV),
+		FOREIGN KEY (MaHD) REFERENCES tbl_HoaDon(MaHD),
+		FOREIGN KEY (MaDV) REFERENCES tbl_DichVu(MaDV)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+	CREATE TABLE tbl_HDPhong(
+		MaHD INT NOT NULL,
+		MaPhong Int NOT NULL,
+		NgayNhanPhong Date,
+		NgayTraPhong Date,
+		TongTien DOUBLE,
+		TrangThai BOOLEAN DEFAULT 1,
+		ThanhToan BOOLEAN DEFAULT 0,
+		PRIMARY KEY (MaHD, MaPhong),
+		FOREIGN KEY (MaHD) REFERENCES tbl_HoaDon(MaHD),
+		FOREIGN KEY (MaPhong) REFERENCES tbl_Phong(MaPhong)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+	CREATE TABLE tbl_AnhPhong(
+		MaAP INT AUTO_INCREMENT PRIMARY KEY,
+		MaLoai Int NOT NULL,
+		HinhAnh VARCHAR(255),
+		FOREIGN KEY (MaLoai) REFERENCES tbl_LoaiPhong(MaLoai)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+	CREATE TABLE tbl_AnhTour(
+		MaAT INT AUTO_INCREMENT PRIMARY KEY,
+		MaTour varchar(20) NOT NULL,
+		HinhAnh VARCHAR(255),
+		FOREIGN KEY (MaTour) REFERENCES tbl_TOUR(MaTour)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+	CREATE TABLE tbl_AnhDichVu(
+		MaADV INT AUTO_INCREMENT PRIMARY KEY,
+		MaDV int NOT NULL,
+		HinhAnh VARCHAR(255),
+		FOREIGN KEY (MaDV) REFERENCES tbl_DichVu(MaDV)
+
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+
+
 INSERT INTO tbl_ChucVu (TenCV) VALUES
 ('Quản lý'),
 ('Nhân viên lễ tân'),
 ('Nhân viên bán tour');
 
--- ================= NHAN VIEN =================
+
 INSERT INTO tbl_NhanVien
 (TenNV, GioiTinh, NgaySinh, DiaChi, SDT, TenTK, MatKhau, Email, MaCV)
 VALUES
@@ -167,52 +193,45 @@ VALUES
 
 
 -- ================= LOAI PHONG =================
-INSERT INTO tbl_LoaiPhong (TenLoai) VALUES
-('Phòng đơn'),
-('Phòng đôi'),
-('Phòng gia đình');
+INSERT INTO tbl_LoaiPhong (TenLoai, GiaPhong, SoLuongNguoi, HinhAnh, MoTa) VALUES
+-- PHÒNG ĐƠN
+('Phòng đơn',500000,2,'Don1.jpg','hòng đơn nhà tranh dành cho tối đa 2 người, thiết kế mộc mạc, gần gũi thiên nhiên. Trang bị giường đôi, máy lạnh, quạt, tivi, WiFi và phòng tắm riêng nước nóng.'),
+
+-- PHÒNG ĐƠN - VIEW
+('Phòng đơn View',800000,2,'DonView1.jpg','Phòng đơn view đẹp cho 2 người, không gian thoáng với cửa sổ lớn nhìn ra cảnh quan. Trang bị giường đôi, máy lạnh, tivi, WiFi, minibar và phòng tắm riêng tiện nghi.'),
+
+-- PHÒNG ĐÔI
+('Phòng đôi',900000,4,'Doi1.jpg','Phòng đôi cho 4 người, không gian rộng rãi, thiết kế truyền thống. Trang bị 2 giường lớn, máy lạnh, quạt, tivi, WiFi và phòng tắm riêng.'),
+
+-- PHÒNG ĐÔI - VIEW
+('Phòng đôi View',1300000,4,'DoiView1.jpg','Phòng đôi view đẹp cho 4 người, có cửa sổ hoặc ban công nhìn ra thiên nhiên. Trang bị 2 giường lớn, máy lạnh, tivi, WiFi, minibar và phòng tắm riêng.'),
+
+-- PHÒNG GIA ĐÌNH 
+('Phòng gia đình',1200000,6,'GD1.jpg','Phòng gia đình cho 6 người, không gian rộng, gần gũi thiên nhiên. Trang bị nhiều giường, máy lạnh, quạt, tivi, WiFi và phòng tắm riêng.'),
+
+-- PHÒNG GIA ĐÌNH - VIEW
+('Phòng gia đình View',1800000,6,'GDView1.jpg','Phòng gia đình view đẹp cho 6 người, không gian thoáng, tầm nhìn đẹp. Trang bị giường ngủ, máy lạnh, tivi, WiFi, minibar và phòng tắm riêng hiện đại.');
 
 -- ================= PHONG =================
-INSERT INTO tbl_Phong VALUES
+INSERT INTO tbl_Phong (TenPhong, MaLoai) VALUES
 
--- PHÒNG ĐƠN (1)
-('P101','Phòng đơn NT1',500000,2,'p101.jpg','Không gian nhà tranh yên tĩnh, gần gũi thiên nhiên, thích hợp nghỉ dưỡng cá nhân.',1),
-('P102','Phòng đơn NT2',500000,2,'p102.jpg','Không gian mộc mạc, thoáng mát, tạo cảm giác thư giãn nhẹ nhàng.',1),
-('P103','Phòng đơn NT3',500000,2,'p103.jpg','Thiết kế đơn giản, hài hòa với thiên nhiên xung quanh.',1),
-('P104','Phòng đơn NT4',500000,2,'p104.jpg','Phù hợp khách thích sự riêng tư và yên tĩnh.',1),
-('P105','Phòng đơn NT5',500000,2,'p105.jpg','Nội thất cơ bản, sạch sẽ và tiện nghi.',1),
-('P106','Phòng đơn NT6',500000,2,'p106.jpg','Không gian thoáng đãng, nhiều cây xanh.',1),
-('P107','Phòng đơn NT7',500000,2,'p107.jpg','Phòng nghỉ tiết kiệm nhưng đầy đủ tiện ích.',1),
+-- PHÒNG ĐƠN (MaLoai = 1)
+('P101',1),('P102',1),('P103',1),('P104',1),('P105',1),('P106',1),('P107',1),
 
-('P108','Phòng đơn View1',800000,2,'p108.jpg','View núi đẹp, cửa sổ lớn đón ánh sáng tự nhiên.',1),
-('P109','Phòng đơn View2',800000,2,'p109.jpg','Không gian sang trọng, view toàn cảnh thiên nhiên.',1),
-('P110','Phòng đơn View3',800000,2,'p110.jpg','Ban công rộng, nhìn ra cảnh đẹp Núi Cấm.',1),
+-- PHÒNG ĐƠN VIEW (MaLoai = 2)
+('P108',2),('P109',2),('P110',2),
 
--- PHÒNG ĐÔI (2)
-('P201','Phòng đôi NT1',900000,4,'p201.jpg','Không gian nhà tranh rộng rãi, phù hợp gia đình nhỏ.',2),
-('P202','Phòng đôi NT2',900000,4,'p202.jpg','Thiết kế ấm cúng, đầy đủ tiện nghi.',2),
-('P203','Phòng đôi NT3',900000,4,'p203.jpg','Không gian thoáng mát, gần gũi thiên nhiên.',2),
-('P204','Phòng đôi NT4',900000,4,'p204.jpg','Phù hợp nhóm bạn hoặc gia đình.',2),
-('P205','Phòng đôi NT5',900000,4,'p205.jpg','Yên tĩnh, tiện nghi đầy đủ.',2),
-('P206','Phòng đôi NT6',900000,4,'p206.jpg','Thiết kế đơn giản nhưng tiện ích.',2),
-('P207','Phòng đôi NT7',900000,4,'p207.jpg','Không gian nghỉ dưỡng thoải mái.',2),
+-- PHÒNG ĐÔI  (MaLoai = 3)
+('P201',3),('P202',3),('P203',3),('P204',3),('P205',3),('P206',3),('P207',3),
 
-('P208','Phòng đôi View1',1300000,4,'p208.jpg','Phòng cao cấp với view núi tuyệt đẹp.',2),
-('P209','Phòng đôi View2',1300000,4,'p209.jpg','Ban công rộng, không gian sang trọng.',2),
-('P210','Phòng đôi View3',1300000,4,'p210.jpg','Thiết kế hiện đại, view cực đẹp.',2),
+-- PHÒNG ĐÔI VIEW (MaLoai = 4)
+('P208',4),('P209',4),('P210',4),
 
--- PHÒNG GIA ĐÌNH (3)
-('P301','Phòng gia đình NT1',1200000,6,'p301.jpg','Phòng rộng rãi, phù hợp gia đình đông người, ấm cúng.',3),
-('P302','Phòng gia đình NT2',1200000,6,'p302.jpg','Thiết kế nhà tranh gần gũi thiên nhiên.',3),
-('P303','Phòng gia đình NT3',1200000,6,'p303.jpg','Không gian sinh hoạt thoải mái.',3),
-('P304','Phòng gia đình NT4',1200000,6,'p304.jpg','Phù hợp nghỉ dưỡng dài ngày.',3),
-('P305','Phòng gia đình NT5',1200000,6,'p305.jpg','Nội thất đầy đủ tiện nghi.',3),
-('P306','Phòng gia đình NT6',1200000,6,'p306.jpg','Không gian rộng rãi, thoáng mát.',3),
-('P307','Phòng gia đình NT7',1200000,6,'p307.jpg','Phòng lý tưởng cho gia đình.',3),
+-- PHÒNG GIA ĐÌNH  (MaLoai = 5)
+('P301',5),('P302',5),('P303',5),('P304',5),('P305',5),('P306',5),('P307',5),
 
-('P308','Phòng gia đình View1',1800000,6,'p308.jpg','Phòng cao cấp, view núi đẹp.',3),
-('P309','Phòng gia đình View2',1800000,6,'p309.jpg','Không gian sang trọng, rộng rãi.',3),
-('P310','Phòng gia đình View3',1800000,6,'p310.jpg','Thiết kế hiện đại, ban công lớn.',3);
+-- PHÒNG GIA ĐÌNH VIEW (MaLoai = 6)
+('P308',6),('P309',6),('P310',6);
 
 -- ================= HUONG DAN VIEN =================
 INSERT INTO tbl_HuongDanVien (TenHDV, NgaySinh, DiaChi, SDT, TrangThai) VALUES
@@ -238,3 +257,70 @@ VALUES
 INSERT INTO tbl_DichVu (TenDV, GiaDV) VALUES
 ('Ăn sáng',50000),
 ('Ăn trưa',100000);
+
+-- ================anh=============
+INSERT INTO tbl_AnhPhong (MaLoai, HinhAnh)
+VALUES 
+('1', 'Don1.jpg'),
+('1', 'Don2.jpg'),
+('1', 'Don3jpg'),
+('1', 'Don4.jpg'),
+('1', 'Don5.jpg'),
+
+('2', 'DonView1.jpg'),
+('2', 'DonView2.jpg'),
+('2', 'DonView3jpg'),
+('2', 'DonView4.jpg'),
+('2', 'DonView5.jpg'),
+('2', 'DonView6.jpg'),
+
+('3', 'Doi1.jpg'),
+('3', 'Doi2.jpg'),
+('3', 'Doi3jpg'),
+('3', 'Doi4.jpg'),
+('3', 'Doi5.jpg'),
+('3', 'Doi6.jpg'),
+
+('4', 'DoiView1.jpg'),
+('4', 'DoiView2.jpg'),
+('4', 'DoiView3jpg'),
+('4', 'DoiView4.jpg'),
+('4', 'DoiView5.jpg'),
+
+('5', 'GD1.jpg'),
+('5', 'GD2.jpg'),
+('5', 'GD3.jpg'),
+('5', 'GD4.jpg'),
+('5', 'GD5.jpg'),
+('5', 'GD6.jpg'),
+
+('6', 'GDView1.jpg'),
+('6', 'GDView2.jpg'),
+('6', 'GDView3.jpg'),
+('6', 'GDView4.jpg'),
+('6', 'GDView5.jpg');
+
+INSERT INTO tbl_AnhDichVu (MaDV, HinhAnh)
+VALUES 
+('1', 'DichVu_1_1.jpg'),
+('1', 'DichVu_1_2.jpg'),
+('1', 'DichVu_1_3.jpg'),
+
+('2', 'DichVu_1_1.jpg'),
+('2', 'DichVu_2_2.jpg'),
+('2', 'DichVu_2_3.jpg');
+
+INSERT INTO tbl_AnhTour (MaTour, HinhAnh)
+VALUES 
+('T001', 'TourNuiCam1.jpg'),
+('T001', 'TourNuiCam2.jpg'),
+('T001', 'TourNuiCam3.jpg'),
+('T001', 'TourNuiCam4.jpg'),
+('T001', 'TourNuiCam5.jpg'),
+
+('T002', 'Tour30_4_1.jpg'),
+('T002', 'Tour30_4_2.jpg'),
+('T002', 'Tour30_4_3.jpg'),
+('T002', 'Tour30_4_4.jpg'),
+('T002', 'Tour30_4_5.jpg');
+

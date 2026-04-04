@@ -37,20 +37,11 @@ class CustomerController extends Controller
             ->limit(6)
             ->get();
 
-        $phongIds = Phong::query()
-            ->selectRaw('MIN(MaPhong) as MaPhong')
-            ->groupBy('TenPhong')
-            ->orderBy('TenPhong')
+        $phongs = LoaiPhong::query()
+            ->select(['MaLoai', 'TenLoai', 'GiaPhong', 'SoLuongNguoi', 'HinhAnh', 'MoTa'])
+            ->orderBy('TenLoai')
             ->limit(6)
-            ->pluck('MaPhong');
-
-        $phongs = Phong::query()
-            ->select(['MaPhong', 'TenPhong', 'GiaPhong', 'HinhAnh', 'MoTa', 'MaLoai'])
-            ->with('loaiPhong:MaLoai,TenLoai')
-            ->whereIn('MaPhong', $phongIds)
-            ->orderBy('TenPhong')
-            ->get()
-            ->values();
+            ->get();
 
         $tours = Tour::query()
             ->select(['MaTour', 'TenTour', 'GiaTourNguoiLon', 'DiaDiemKhoiHanh', 'ThoiLuong', 'HinhAnh', 'MoTa'])
@@ -72,10 +63,13 @@ class CustomerController extends Controller
             'gia_den' => 'nullable|numeric|min:0',
         ]);
 
-        $distinctRoomIds = Phong::query()
-            ->selectRaw('MIN(MaPhong)')
+        $items = LoaiPhong::query()
+            ->select(['MaLoai', 'TenLoai', 'GiaPhong', 'SoLuongNguoi', 'HinhAnh', 'MoTa'])
             ->when(!empty($filters['q']), function ($query) use ($filters) {
-                $query->where('TenPhong', 'like', '%' . $filters['q'] . '%');
+                $query->where(function ($subQuery) use ($filters) {
+                    $subQuery->where('TenLoai', 'like', '%' . $filters['q'] . '%')
+                        ->orWhere('MaLoai', 'like', '%' . $filters['q'] . '%');
+                });
             })
             ->when(!empty($filters['ma_loai']), function ($query) use ($filters) {
                 $query->where('MaLoai', $filters['ma_loai']);
@@ -89,14 +83,8 @@ class CustomerController extends Controller
             ->when(isset($filters['gia_den']) && $filters['gia_den'] !== null, function ($query) use ($filters) {
                 $query->where('GiaPhong', '<=', $filters['gia_den']);
             })
-            ->groupBy('TenPhong');
-
-        $items = Phong::query()
-            ->select(['MaPhong', 'TenPhong', 'SoLuongNguoi', 'GiaPhong', 'HinhAnh', 'MoTa', 'MaLoai'])
-            ->with('loaiPhong:MaLoai,TenLoai')
-            ->whereIn('MaPhong', $distinctRoomIds)
             ->orderBy('GiaPhong')
-            ->orderBy('TenPhong')
+            ->orderBy('TenLoai')
             ->paginate(12)
             ->withQueryString();
 
@@ -218,12 +206,10 @@ class CustomerController extends Controller
             ->orderBy('TenDV')
             ->get();
 
-        $phongs = Phong::query()
-            ->select(['TenPhong', 'GiaPhong'])
-            ->orderBy('TenPhong')
-            ->get()
-            ->unique('TenPhong')
-            ->values();
+        $phongs = LoaiPhong::query()
+            ->select(['MaLoai', 'TenLoai', 'GiaPhong'])
+            ->orderBy('TenLoai')
+            ->get();
 
         $tours = Tour::query()
             ->select(['MaTour', 'TenTour', 'GiaTourNguoiLon', 'GiaTourTreEm'])
@@ -241,8 +227,8 @@ class CustomerController extends Controller
 
         $phongOptions = $phongs->map(function ($item) {
             return [
-                'value' => $item->TenPhong,
-                'label' => $item->TenPhong,
+                'value' => (string) $item->MaLoai,
+                'label' => $item->TenLoai,
                 'price' => (float) $item->GiaPhong,
             ];
         })->values();
@@ -338,7 +324,8 @@ class CustomerController extends Controller
         $hoaDon = HoaDon::query()
             ->with([
                 'khachHang:MaKH,TenKH,SDT,Email',
-                'hdPhongs.phong:MaPhong,TenPhong,GiaPhong',
+                'hdPhongs.phong:MaPhong,TenPhong,MaLoai',
+                'hdPhongs.phong.loaiPhong:MaLoai,GiaPhong',
                 'hdDichVus.dichVu:MaDV,TenDV,GiaDV',
                 'hdTours.lichKhoiHanh:MaLKH,MaTour,NgayKhoiHanh,NgayKetThuc',
                 'hdTours.lichKhoiHanh.tour:MaTour,TenTour,GiaTourNguoiLon,GiaTourTreEm',
@@ -496,26 +483,20 @@ class CustomerController extends Controller
         return redirect()->route('customer.index')->with('success', 'Bạn đã đăng xuất khỏi tài khoản khách hàng.');
     }
 
-    public function roomDetail(string $tenPhong): View
+    public function roomDetail(int|string $maLoai): View
     {
-        $phong = Phong::query()
-            ->select(['MaPhong', 'TenPhong', 'GiaPhong', 'HinhAnh', 'MoTa', 'SoLuongNguoi', 'MaLoai'])
-            ->with('loaiPhong:MaLoai,TenLoai')
-            ->where('TenPhong', $tenPhong)
-            ->firstOrFail();
+        $phong = LoaiPhong::query()
+            ->with(['anhPhongs' => function ($query) {
+                $query->select(['MaAP', 'MaLoai', 'HinhAnh'])->orderBy('MaAP');
+            }])
+            ->select(['MaLoai', 'TenLoai', 'GiaPhong', 'SoLuongNguoi', 'HinhAnh', 'MoTa'])
+            ->findOrFail($maLoai);
 
-        $relatedRoomIds = Phong::query()
-            ->selectRaw('MIN(MaPhong) as MaPhong')
-            ->where('TenPhong', '<>', $phong->TenPhong)
-            ->groupBy('TenPhong')
-            ->orderByRaw('MIN(GiaPhong)')
-            ->limit(3)
-            ->pluck('MaPhong');
-
-        $relatedRooms = Phong::query()
-            ->select(['MaPhong', 'TenPhong', 'GiaPhong', 'HinhAnh'])
-            ->whereIn('MaPhong', $relatedRoomIds)
+        $relatedRooms = LoaiPhong::query()
+            ->select(['MaLoai', 'TenLoai', 'GiaPhong', 'SoLuongNguoi', 'HinhAnh'])
+            ->where('MaLoai', '<>', $phong->MaLoai)
             ->orderBy('GiaPhong')
+            ->limit(3)
             ->get();
 
         $customerProfile = $this->getCustomerProfile();
@@ -527,6 +508,9 @@ class CustomerController extends Controller
     public function tourDetail(string $maTour): View
     {
         $tour = Tour::query()
+            ->with(['anhTours' => function ($query) {
+                $query->select(['MaAT', 'MaTour', 'HinhAnh'])->orderBy('MaAT');
+            }])
             ->select([
                 'MaTour',
                 'TenTour',
@@ -544,7 +528,7 @@ class CustomerController extends Controller
             ->findOrFail($maTour);
 
         $relatedTours = Tour::query()
-            ->select(['MaTour', 'TenTour', 'GiaTourNguoiLon'])
+            ->select(['MaTour', 'TenTour', 'GiaTourNguoiLon', 'DiaDiemKhoiHanh', 'HinhAnh'])
             ->where('TrangThai', 1)
             ->where('MaTour', '<>', $tour->MaTour)
             ->orderBy('TenTour')
@@ -560,6 +544,9 @@ class CustomerController extends Controller
     public function serviceDetail(string $maDV): View
     {
         $dichVu = DichVu::query()
+            ->with(['anhDichVus' => function ($query) {
+                $query->select(['MaADV', 'MaDV', 'HinhAnh'])->orderBy('MaADV');
+            }])
             ->select(['MaDV', 'TenDV', 'GiaDV', 'TrangThai'])
             ->where('TrangThai', 1)
             ->findOrFail($maDV);
@@ -751,11 +738,10 @@ class CustomerController extends Controller
         }
 
         if ($type === 'phong') {
-            $tenPhong = $commonPayload['ma_dich_vu'];
-            $phong = Phong::query()
-                ->where('TenPhong', $tenPhong)
-                ->orderBy('GiaPhong')
-                ->first();
+            $maLoai = $commonPayload['ma_dich_vu'];
+            $phong = LoaiPhong::query()
+                ->select(['MaLoai', 'TenLoai', 'GiaPhong', 'SoLuongNguoi', 'HinhAnh', 'MoTa'])
+                ->find($maLoai);
 
             if (!$phong) {
                 throw ValidationException::withMessages([
@@ -764,7 +750,7 @@ class CustomerController extends Controller
             }
 
             $availableRoom = $this->findSmallestAvailableRoomByDateRange(
-                $tenPhong,
+                $maLoai,
                 (string) $commonPayload['ngay_nhan_phong'],
                 (string) $commonPayload['ngay_tra_phong']
             );
@@ -785,8 +771,8 @@ class CustomerController extends Controller
             return [
                 'id' => (string) Str::uuid(),
                 'type' => 'phong',
-                'service_code' => $tenPhong,
-                'service_name' => (string) $phong->TenPhong,
+                'service_code' => (string) $phong->MaLoai,
+                'service_name' => (string) $phong->TenLoai,
                 'unit_price' => $unitPrice,
                 'quantity_label' => $soDem . ' đêm',
                 'schedule_label' => 'Nhận ' . Carbon::parse((string) $commonPayload['ngay_nhan_phong'])->format('d/m/Y') . ' · Trả ' . Carbon::parse((string) $commonPayload['ngay_tra_phong'])->format('d/m/Y'),
@@ -876,7 +862,9 @@ class CustomerController extends Controller
                         ]);
                     }
 
-                    $phong = Phong::query()->findOrFail($maPhong);
+                    $phong = Phong::query()
+                        ->with('loaiPhong:MaLoai,GiaPhong')
+                        ->findOrFail($maPhong);
                     $soDem = max(
                         1,
                         Carbon::parse((string) ($payload['ngay_nhan_phong'] ?? now()->toDateString()))
@@ -1160,13 +1148,13 @@ class CustomerController extends Controller
     public function checkAvailableRooms(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'ten_phong' => 'required|string',
+            'ma_loai' => 'required|exists:tbl_LoaiPhong,MaLoai',
             'ngay_nhan' => 'required|date',
             'ngay_tra' => 'required|date|after:ngay_nhan',
         ]);
 
         $availableRooms = $this->getAvailableRoomsByDateRange(
-            $validated['ten_phong'],
+            (string) $validated['ma_loai'],
             $validated['ngay_nhan'],
             $validated['ngay_tra']
         );
@@ -1182,11 +1170,11 @@ class CustomerController extends Controller
      * Tìm phòng có mã nhỏ nhất trống trong khoảng ngày nhận/trả
      * 
      */
-    private function findSmallestAvailableRoomByDateRange(string $tenPhong, string $ngayNhan, string $ngayTra): ?string
+    private function findSmallestAvailableRoomByDateRange(int|string $maLoai, string $ngayNhan, string $ngayTra): ?string
     {
         $allRooms = Phong::query()
             ->select(['MaPhong'])
-            ->where('TenPhong', $tenPhong)
+            ->where('MaLoai', $maLoai)
             ->orderBy('MaPhong', 'asc')
             ->get()
             ->pluck('MaPhong')
@@ -1209,11 +1197,11 @@ class CustomerController extends Controller
      * Get list of available rooms for date range
      * 
      */
-    private function getAvailableRoomsByDateRange(string $tenPhong, string $ngayNhan, string $ngayTra): array
+    private function getAvailableRoomsByDateRange(int|string $maLoai, string $ngayNhan, string $ngayTra): array
     {
         $allRooms = Phong::query()
             ->select(['MaPhong'])
-            ->where('TenPhong', $tenPhong)
+            ->where('MaLoai', $maLoai)
             ->orderBy('MaPhong', 'asc')
             ->get()
             ->pluck('MaPhong')

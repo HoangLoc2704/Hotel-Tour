@@ -4,10 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StorePhongRequest;
 use App\Http\Requests\UpdatePhongRequest;
+use App\Models\LoaiPhong;
 use App\Models\Phong;
 use Carbon\CarbonPeriod;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 
 class PhongController extends Controller
@@ -16,16 +18,17 @@ class PhongController extends Controller
     {
         $search = $request->input('search');
         $phong = Phong::query()
-            ->select(['MaPhong', 'TenPhong', 'SoLuongNguoi', 'GiaPhong', 'HinhAnh', 'MoTa', 'MaLoai'])
+            ->select(['MaPhong', 'TenPhong', 'MaLoai'])
             ->with([
-            'loaiPhong:MaLoai,TenLoai',
-            'hdPhongs' => function ($query) {
-                $query->select(['MaPhong', 'NgayNhanPhong', 'NgayTraPhong'])
-                    ->whereNotNull('NgayNhanPhong')
-                    ->whereNotNull('NgayTraPhong')
-                    ->orderBy('NgayNhanPhong', 'desc');
-            }
-        ]);
+                'loaiPhong:MaLoai,TenLoai,GiaPhong,SoLuongNguoi,HinhAnh,MoTa',
+                'hdPhongs' => function ($query) {
+                    $query->select(['MaPhong', 'NgayNhanPhong', 'NgayTraPhong'])
+                        ->whereNotNull('NgayNhanPhong')
+                        ->whereNotNull('NgayTraPhong')
+                        ->orderBy('NgayNhanPhong', 'desc');
+                },
+            ]);
+
         if ($search) {
             $phong->where(function ($query) use ($search) {
                 $query->where('TenPhong', 'like', "%{$search}%")
@@ -34,6 +37,7 @@ class PhongController extends Controller
                     });
             });
         }
+
         $phong = $phong->paginate(10);
 
         $phong->getCollection()->transform(function ($room) {
@@ -51,6 +55,7 @@ class PhongController extends Controller
             }
 
             $room->bookedDates = array_keys($bookedDateMap);
+
             return $room;
         });
 
@@ -67,7 +72,11 @@ class PhongController extends Controller
 
     public function create()
     {
-        $loaiPhong = \App\Models\LoaiPhong::select('MaLoai', 'TenLoai')->get();
+        $loaiPhong = LoaiPhong::query()
+            ->select(['MaLoai', 'TenLoai', 'GiaPhong', 'SoLuongNguoi', 'HinhAnh', 'MoTa'])
+            ->orderBy('TenLoai')
+            ->get();
+
         return view('phong.create', compact('loaiPhong'));
     }
 
@@ -75,14 +84,8 @@ class PhongController extends Controller
     {
         $validated = $request->validated();
 
-        if ($request->hasFile('HinhAnhFile')) {
-            $file = $request->file('HinhAnhFile');
-            $fileName = Str::uuid()->toString() . '.' . $file->getClientOriginalExtension();
-            $file->move(public_path('img'), $fileName);
-            $validated['HinhAnh'] = $fileName;
-        }
-
-        $phong = Phong::create($validated);
+        $phong = Phong::create(Arr::only($validated, ['TenPhong', 'MaLoai']));
+        $phong->load('loaiPhong');
 
         if ($this->wantsJson($request)) {
             return $this->jsonSuccess($phong, 'Thêm phòng thành công', 201);
@@ -93,7 +96,7 @@ class PhongController extends Controller
 
     public function show(Request $request, $id)
     {
-        $phong = Phong::with('loaiPhong')->findOrFail($id);
+        $phong = Phong::with('loaiPhong:MaLoai,TenLoai,GiaPhong,SoLuongNguoi,HinhAnh,MoTa')->findOrFail($id);
 
         if ($this->wantsJson($request)) {
             return $this->jsonSuccess($phong, 'Chi tiết phòng');
@@ -104,26 +107,22 @@ class PhongController extends Controller
 
     public function edit($id)
     {
-        $phong = Phong::findOrFail($id);
-        $loaiPhong = \App\Models\LoaiPhong::select('MaLoai', 'TenLoai')->get();
+        $phong = Phong::with('loaiPhong:MaLoai,TenLoai,GiaPhong,SoLuongNguoi,HinhAnh,MoTa')->findOrFail($id);
+        $loaiPhong = LoaiPhong::query()
+            ->select(['MaLoai', 'TenLoai', 'GiaPhong', 'SoLuongNguoi', 'HinhAnh', 'MoTa'])
+            ->orderBy('TenLoai')
+            ->get();
+
         return view('phong.edit', compact('phong', 'loaiPhong'));
     }
 
     public function update(UpdatePhongRequest $request, $id)
     {
-        $phong = Phong::findOrFail($id);
+        $phong = Phong::with('loaiPhong')->findOrFail($id);
         $validated = $request->validated();
 
-        if ($request->hasFile('HinhAnhFile')) {
-            $file = $request->file('HinhAnhFile');
-            $fileName = Str::uuid()->toString() . '.' . $file->getClientOriginalExtension();
-            $file->move(public_path('img'), $fileName);
-            $validated['HinhAnh'] = $fileName;
-        } else {
-            unset($validated['HinhAnh']);
-        }
-
-        $phong->update($validated);
+        $phong->update(Arr::only($validated, ['TenPhong', 'MaLoai']));
+        $phong->load('loaiPhong');
 
         if ($this->wantsJson($request)) {
             return $this->jsonSuccess($phong, 'Cập nhật phòng thành công');
@@ -135,6 +134,7 @@ class PhongController extends Controller
     public function destroy(Request $request, $id)
     {
         $phong = Phong::findOrFail($id);
+
         try {
             $phong->delete();
 
@@ -152,6 +152,21 @@ class PhongController extends Controller
             }
 
             return redirect()->route('phong.index')->with('error', 'Không thể xóa phòng vì đang có dữ liệu liên quan.');
+        }
+    }
+
+    private function syncLoaiPhongData(Phong $phong, array $typeData): void
+    {
+        $typeData = array_filter($typeData, static function ($value) {
+            return $value !== null && $value !== '';
+        });
+
+        if (!empty($typeData)) {
+            LoaiPhong::query()
+                ->where('MaLoai', $phong->MaLoai)
+                ->update($typeData);
+
+            $phong->unsetRelation('loaiPhong');
         }
     }
 }

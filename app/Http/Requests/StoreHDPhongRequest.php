@@ -18,7 +18,7 @@ class StoreHDPhongRequest extends FormRequest
             'MaPhong'       => 'required|exists:tbl_Phong,MaPhong',
             'NgayNhanPhong' => 'nullable|date',
             'NgayTraPhong'  => 'nullable|date|after_or_equal:NgayNhanPhong',
-            'TongTien'      => 'nullable|numeric',
+            'TongTien'      => 'nullable|numeric|min:0',
             'TrangThai'     => 'required|boolean',
             'ThanhToan'     => 'required|boolean',
         ];

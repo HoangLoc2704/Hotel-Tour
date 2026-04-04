@@ -53,7 +53,8 @@
                         <article class="service-card h-100">
                             <div class="service-card-icon">DV</div>
                             <h3>{{ $dichVu->TenDV }}</h3>
-                            <p>Giá từ {{ number_format($dichVu->GiaDV ?? 0, 0, ',', '.') }} VND</p>
+                            <p>Dịch vụ tiện ích dành cho khách lưu trú và khách tham quan trong ngày.</p>
+                            <div class="price">Giá từ {{ number_format($dichVu->GiaDV ?? 0, 0, ',', '.') }} VND</div>
                             <a href="{{ route('customer.service-detail', $dichVu->MaDV) }}" class="detail-link">Xem chi tiết</a>
                         </article>
                     </div>
@@ -77,16 +78,18 @@
                         <article class="offer-card h-100">
                             <div class="offer-image">
                                 <img
-                                    src="{{ asset('img/Room' . ($phong->HinhAnh ?: 'Don1.jpg')) }}"
-                                    alt="{{ $phong->TenPhong }}"
+                                    src="{{ asset($phong->roomImagePath()) }}"
+                                    alt="{{ $phong->TenLoai }}"
                                     loading="lazy"
                                 >
                             </div>
                             <div class="offer-body">
-                                <h3>{{ $phong->TenPhong }}</h3>
-                                <p>{{ $phong->loaiPhong->TenLoai ?? 'Loại phòng tiêu chuẩn' }}</p>
+                                <div class="detail-badge mb-2">Mã loại: {{ $phong->MaLoai }}</div>
+                                <h3>{{ $phong->TenLoai }}</h3>
+                                <p>{{ (int) ($phong->SoLuongNguoi ?? 0) }} khách · Loại phòng</p>
+                                <p>{{ \Illuminate\Support\Str::limit($phong->MoTa ?: 'Phòng nghỉ thoải mái, phù hợp cho kỳ nghỉ ngắn ngày và nghỉ dưỡng gia đình.', 95) }}</p>
                                 <div class="price">{{ number_format($phong->GiaPhong ?? 0, 0, ',', '.') }} VND / đêm</div>
-                                <a href="{{ route('customer.room-detail', $phong->TenPhong) }}" class="detail-link">Xem chi tiết</a>
+                                <a href="{{ route('customer.room-detail', $phong->MaLoai) }}" class="detail-link">Xem chi tiết</a>
                             </div>
                         </article>
                     </div>
@@ -108,10 +111,17 @@
                 @forelse ($tours as $tour)
                     <div class="col-md-6 col-lg-4">
                         <article class="offer-card h-100">
-                            <div class="offer-image">{{ $tour->TenTour }}</div>
+                            <div class="offer-image">
+                                <img
+                                    src="{{ asset($tour->tourImagePath()) }}"
+                                    alt="{{ $tour->TenTour }}"
+                                    loading="lazy"
+                                >
+                            </div>
                             <div class="offer-body">
                                 <h3>{{ $tour->TenTour }}</h3>
-                                <p>{{ $tour->DiaDiemKhoiHanh ?? 'Cập nhật tại quận' }} · {{ $tour->ThoiLuong }} ngày</p>
+                                <p>{{ $tour->DiaDiemKhoiHanh ?? 'Đang cập nhật' }} · {{ $tour->ThoiLuong }} ngày</p>
+                                <p>{{ \Illuminate\Support\Str::limit($tour->MoTa ?: 'Lịch trình gọn gàng, phù hợp cho gia đình, nhóm bạn và khách du lịch tự do.', 95) }}</p>
                                 <div class="price">Từ {{ number_format($tour->GiaTourNguoiLon ?? 0, 0, ',', '.') }} VND / người</div>
                                 <a href="{{ route('customer.tour-detail', $tour->MaTour) }}" class="detail-link">Xem chi tiết</a>
                             </div>

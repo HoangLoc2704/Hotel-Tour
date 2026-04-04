@@ -13,14 +13,11 @@ class UpdatePhongRequest extends FormRequest
 
     public function rules(): array
     {
+        $id = $this->route('phong');
+
         return [
-            'TenPhong'      => 'required|string|max:50',
-            'SoLuongNguoi'  => 'required|integer',
-            'GiaPhong'      => 'required|numeric',
-            'HinhAnh'       => 'nullable|string|max:255',
-            'HinhAnhFile'   => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
-            'MoTa'          => 'nullable|string|max:255',
-            'MaLoai'        => 'required|exists:tbl_LoaiPhong,MaLoai',
+            'TenPhong' => 'required|string|max:10|unique:tbl_Phong,TenPhong,' . $id . ',MaPhong',
+            'MaLoai'   => 'required|exists:tbl_LoaiPhong,MaLoai',
         ];
     }
 }

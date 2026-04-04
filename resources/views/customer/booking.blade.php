@@ -528,7 +528,7 @@
         }
 
         async function checkAvailableRooms() {
-            const tenPhong = serviceCodeEl.value;
+            const roomTypeId = serviceCodeEl.value;
             const ngayNhanPhong = ngayNhanPhongEl.value;
             const ngayTraPhong = ngayTraPhongEl.value;
 
@@ -542,7 +542,7 @@
                 return;
             }
 
-            if (!tenPhong) {
+            if (!roomTypeId) {
                 showAvailabilityMessage('Vui lòng chọn loại phòng để kiểm tra phòng trống.', 'warning');
                 return;
             }
@@ -555,7 +555,7 @@
 
             try {
                 const params = new URLSearchParams({
-                    ten_phong: tenPhong,
+                    ma_loai: roomTypeId,
                     ngay_nhan: ngayNhanPhong,
                     ngay_tra: ngayTraPhong,
                 });
@@ -577,7 +577,7 @@
                 const data = await response.json();
 
                 if (data.available) {
-                    showAvailabilityMessage(`Co ${data.room_count} phong kha dung: ${data.available_rooms.join(', ')}`, 'success');
+                    showAvailabilityMessage(`Còn ${data.room_count} phòng khả dụng cho loại phòng này.`, 'success');
                 } else {
                     showAvailabilityMessage('Không có phòng khả dụng trong khoảng thời gian này!', 'danger');
                 }

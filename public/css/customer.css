@@ -277,6 +277,16 @@ body {
     box-shadow: 0 18px 34px rgba(18, 83, 55, 0.11);
 }
 
+.detail-shell-room {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+}
+
+.detail-shell-room .detail-content {
+    width: min(100%, 900px);
+    margin: 0 auto;
+}
+
 .detail-media {
     min-height: 280px;
     border-radius: 16px;
@@ -298,6 +308,138 @@ body {
     min-height: 260px;
     object-fit: cover;
     border-radius: 12px;
+}
+
+.detail-media-gallery {
+    min-height: auto;
+    padding: 1.25rem 0 3rem;
+    background: linear-gradient(180deg, #edf8f1 0%, #f8fcfa 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+.detail-media-gallery::before,
+.detail-media-gallery::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: clamp(36px, 7vw, 110px);
+    z-index: 4;
+    pointer-events: none;
+}
+
+.detail-media-gallery::before {
+    left: 0;
+    background: linear-gradient(90deg, rgba(237, 248, 241, 0.98) 15%, rgba(237, 248, 241, 0) 100%);
+}
+
+.detail-media-gallery::after {
+    right: 0;
+    background: linear-gradient(270deg, rgba(237, 248, 241, 0.98) 15%, rgba(237, 248, 241, 0) 100%);
+}
+
+.room-gallery-carousel {
+    width: 100%;
+    cursor: grab;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: pan-y;
+}
+
+.room-gallery-carousel.is-dragging {
+    cursor: grabbing;
+}
+
+.room-gallery-carousel .carousel-inner {
+    position: relative;
+    height: clamp(280px, 44vw, 520px);
+    overflow: visible;
+}
+
+.room-gallery-carousel .carousel-item {
+    position: absolute;
+    inset: 0;
+    left: 50%;
+    width: min(72%, 900px);
+    height: 100%;
+    display: block;
+    margin: 0;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(-50%) scale(0.78);
+    transition: transform 0.65s ease, opacity 0.65s ease, filter 0.65s ease;
+}
+
+.room-gallery-carousel .carousel-item img {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    object-fit: cover;
+    border-radius: 22px;
+    box-shadow: 0 24px 48px rgba(16, 60, 42, 0.24);
+}
+
+.room-gallery-carousel .carousel-item.active,
+.room-gallery-carousel .carousel-item.room-gallery-active {
+    opacity: 1;
+    z-index: 3;
+    transform: translateX(-50%) scale(1);
+    filter: none;
+}
+
+.room-gallery-carousel .carousel-item.room-gallery-prev {
+    opacity: 0.35;
+    z-index: 2;
+    transform: translateX(-92%) scale(0.84);
+    filter: blur(1px) brightness(0.72);
+}
+
+.room-gallery-carousel .carousel-item.room-gallery-next {
+    opacity: 0.35;
+    z-index: 2;
+    transform: translateX(-8%) scale(0.84);
+    filter: blur(1px) brightness(0.72);
+}
+
+.room-gallery-control {
+    width: 44px;
+    height: 44px;
+    top: 50%;
+    bottom: auto;
+    transform: translateY(-50%);
+    border-radius: 999px;
+    background: rgba(10, 59, 45, 0.72);
+    opacity: 0.95;
+    z-index: 5;
+}
+
+.room-gallery-control.carousel-control-prev {
+    left: 1rem;
+}
+
+.room-gallery-control.carousel-control-next {
+    right: 1rem;
+}
+
+.room-gallery-indicators {
+    margin-bottom: 0;
+    bottom: -0.35rem;
+    gap: 0.38rem;
+}
+
+.room-gallery-indicators [data-bs-target] {
+    width: 9px;
+    height: 9px;
+    border: 0;
+    border-radius: 999px;
+    background: rgba(31, 122, 85, 0.32);
+    opacity: 1;
+}
+
+.room-gallery-indicators .active {
+    width: 26px;
+    background: linear-gradient(135deg, var(--green-900) 0%, #ff8c1a 100%);
 }
 
 .detail-badge {
@@ -451,6 +593,35 @@ body {
 
     .detail-media {
         min-height: 200px;
+    }
+
+    .detail-media-gallery {
+        padding: 0.75rem 0 2.5rem;
+    }
+
+    .detail-media-gallery::before,
+    .detail-media-gallery::after {
+        display: none;
+    }
+
+    .room-gallery-carousel .carousel-inner {
+        height: 240px;
+    }
+
+    .room-gallery-carousel .carousel-item,
+    .room-gallery-carousel .carousel-item.active,
+    .room-gallery-carousel .carousel-item.room-gallery-prev,
+    .room-gallery-carousel .carousel-item.room-gallery-next,
+    .room-gallery-carousel .carousel-item.room-gallery-active {
+        width: 100%;
+        left: 0;
+        transform: none;
+        filter: none;
+    }
+
+    .room-gallery-control {
+        width: 38px;
+        height: 38px;
     }
 
     .cart-item-row,

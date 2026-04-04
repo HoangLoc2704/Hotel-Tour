@@ -16,6 +16,9 @@ use App\Http\Controllers\HDDichVuController;
 use App\Http\Controllers\HDPhongController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\AnhPhongController;
+use App\Http\Controllers\AnhTourController;
+use App\Http\Controllers\AnhDichVuController;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 
 Route::get('/', [AuthController::class, 'index']);
@@ -40,11 +43,16 @@ Route::post('/payment/sepay/webhook', [CustomerController::class, 'sepayWebhook'
 Route::get('/customer/services/hotel', [CustomerController::class, 'hotelServices'])->name('customer.services.hotel');
 Route::get('/customer/services/tour', [CustomerController::class, 'tourServices'])->name('customer.services.tour');
 Route::get('/customer/services/addon', [CustomerController::class, 'addonServices'])->name('customer.services.addon');
-Route::get('/customer/phong/{tenPhong}', [CustomerController::class, 'roomDetail'])->name('customer.room-detail');
+Route::get('/customer/phong/{maLoai}', [CustomerController::class, 'roomDetail'])->name('customer.room-detail');
 Route::get('/customer/tour/{maTour}', [CustomerController::class, 'tourDetail'])->name('customer.tour-detail');
 Route::get('/customer/dich-vu/{maDV}', [CustomerController::class, 'serviceDetail'])->name('customer.service-detail');
 Route::post('/customer/book-service', [CustomerController::class, 'storeBooking'])->name('customer.book-service');
 Route::get('/test-db', [AuthController::class, 'testDb'])->name('test-db');
+
+// Public image management routes: anyone can access directly.
+Route::resource('anh-phong', AnhPhongController::class);
+Route::resource('anh-tour', AnhTourController::class);
+Route::resource('anh-dich-vu', AnhDichVuController::class);
 
 // Authentication Routes
 Route::get('/login', [AuthController::class, 'login'])->name('login');

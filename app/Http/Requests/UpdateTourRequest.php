@@ -21,6 +21,7 @@ class UpdateTourRequest extends FormRequest
             'DiaDiemKhoiHanh'     => 'nullable|string|max:255',
             'SoLuongKhachToiDa'   => 'nullable|integer',
             'HinhAnh'             => 'nullable|string|max:255',
+            'image_file'          => 'nullable|image|max:4096',
             'MoTa'                => 'nullable|string|max:255',
             'LichTrinh'           => 'nullable|string|max:255',
             'TrangThai'           => 'required|boolean',

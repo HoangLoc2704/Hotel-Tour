@@ -22,7 +22,7 @@
 
 <div class="card">
     <div class="card-body">
-        <form method="POST" action="{{ route('tour.update', $tour->MaTour) }}">
+        <form method="POST" action="{{ route('tour.update', $tour->MaTour) }}" enctype="multipart/form-data">
             @csrf
             @method('PUT')
             <div class="mb-3">
@@ -54,8 +54,22 @@
                 <input type="number" name="SoLuongKhachToiDa" class="form-control" value="{{ old('SoLuongKhachToiDa', $tour->SoLuongKhachToiDa) }}">
             </div>
             <div class="mb-3">
-                <label class="form-label">Hình ảnh URL</label>
-                <input type="text" name="HinhAnh" class="form-control" value="{{ old('HinhAnh', $tour->HinhAnh) }}">
+                <label class="form-label">Ảnh hiện tại</label>
+                @if (!empty($tour->HinhAnh))
+                    <div class="mb-2">
+                        <img src="{{ asset($tour->tourImagePath()) }}" alt="{{ $tour->TenTour }}" style="max-width: 240px; width: 100%; height: auto; border-radius: 10px; border: 1px solid #ddd;">
+                    </div>
+                    <div class="small text-muted">{{ $tour->HinhAnh }}</div>
+                @else
+                    <div class="text-muted">Chưa có ảnh.</div>
+                @endif
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Chọn ảnh tour mới từ máy</label>
+                <input type="file" name="image_file" accept="image/*" class="form-control @error('image_file') is-invalid @enderror">
+                <small class="text-muted">Để trống nếu bạn muốn giữ nguyên ảnh hiện tại.</small>
+                @error('image_file')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
             <div class="mb-3">
                 <label class="form-label">Mô tả</label>

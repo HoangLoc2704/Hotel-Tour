@@ -6,6 +6,8 @@ use App\Http\Requests\StoreTourRequest;
 use App\Http\Requests\UpdateTourRequest;
 use App\Models\Tour;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\File;
 
 class TourController extends Controller
 {
@@ -35,6 +37,15 @@ class TourController extends Controller
     public function store(StoreTourRequest $request)
     {
         $validated = $request->validated();
+
+        if ($request->hasFile('image_file')) {
+            $validated['HinhAnh'] = $this->storeUploadedImage(
+                $request->file('image_file'),
+                new Tour($validated)
+            );
+        }
+
+        unset($validated['image_file']);
 
         $tour = Tour::create($validated);
 
@@ -66,6 +77,18 @@ class TourController extends Controller
     {
         $tour = Tour::findOrFail($id);
         $validated = $request->validated();
+
+        if ($request->hasFile('image_file')) {
+            $validated['HinhAnh'] = $this->storeUploadedImage(
+                $request->file('image_file'),
+                new Tour(array_merge($tour->toArray(), $validated))
+            );
+        } else {
+            $validated['HinhAnh'] = $validated['HinhAnh'] ?? $tour->HinhAnh;
+        }
+
+        unset($validated['image_file']);
+
         $tour->update($validated);
 
         if ($this->wantsJson($request)) {
@@ -85,5 +108,19 @@ class TourController extends Controller
         }
 
         return redirect()->route('tour.index')->with('success', 'Xóa tour thành công');
+    }
+
+    private function storeUploadedImage(UploadedFile $file, Tour $tour): string
+    {
+        $extension = strtolower($file->getClientOriginalExtension() ?: 'jpg');
+        $folder = trim(str_replace('img/Tour/', '', str_replace('\\', '/', dirname($tour->tourImagePath()))), '/');
+        $prefix = $folder !== '' ? $folder : 'Tour';
+        $fileName = $prefix . '_' . now()->format('YmdHis') . random_int(100, 999) . '.' . $extension;
+        $destinationDirectory = public_path('img/Tour' . ($folder !== '' ? '/' . $folder : ''));
+
+        File::ensureDirectoryExists($destinationDirectory);
+        $file->move($destinationDirectory, $fileName);
+
+        return $fileName;
     }
 }

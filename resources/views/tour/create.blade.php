@@ -22,7 +22,7 @@
 
 <div class="card">
     <div class="card-body">
-        <form method="POST" action="{{ route('tour.store') }}">
+        <form method="POST" action="{{ route('tour.store') }}" enctype="multipart/form-data">
             @csrf
             <div class="mb-3">
                 <label class="form-label">Mã tour*</label>
@@ -53,8 +53,10 @@
                 <input type="number" name="SoLuongKhachToiDa" class="form-control" value="{{ old('SoLuongKhachToiDa') }}">
             </div>
             <div class="mb-3">
-                <label class="form-label">Hình ảnh URL</label>
-                <input type="text" name="HinhAnh" class="form-control" value="{{ old('HinhAnh') }}">
+                <label class="form-label">Chọn ảnh tour từ máy</label>
+                <input type="file" name="image_file" accept="image/*" class="form-control @error('image_file') is-invalid @enderror">
+                <small class="text-muted">Hệ thống sẽ tự lưu ảnh vào đúng thư mục tour.</small>
+                @error('image_file')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
             <div class="mb-3">
                 <label class="form-label">Mô tả</label>

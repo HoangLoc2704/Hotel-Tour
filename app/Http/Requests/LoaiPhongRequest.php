@@ -14,7 +14,12 @@ class LoaiPhongRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'TenLoai' => 'required|string|max:50',
+            'TenLoai'      => 'required|string|max:50',
+            'GiaPhong'     => 'nullable|numeric|min:0',
+            'SoLuongNguoi' => 'nullable|integer|min:1',
+            'HinhAnh'      => 'nullable|string|max:255',
+            'image_file'   => 'nullable|image|max:4096',
+            'MoTa'         => 'nullable|string|max:255',
         ];
     }
 }

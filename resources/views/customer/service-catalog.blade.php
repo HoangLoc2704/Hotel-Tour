@@ -3,6 +3,14 @@
 @section('title', $title . ' - Danh mục dịch vụ')
 
 @section('content')
+    @php
+        $placeholder = match ($category) {
+            'hotel' => 'Nhập tên loại phòng...',
+            'tour' => 'Nhập tên tour...',
+            default => 'Nhập tên dịch vụ...',
+        };
+    @endphp
+
     <main class="container py-5">
         <section>
             <div class="booking-wrap">
@@ -14,7 +22,7 @@
                 <form method="GET" class="row g-3 mb-4">
                     <div class="col-md-4">
                         <label class="form-label">Từ khóa</label>
-                        <input type="text" name="q" class="form-control" value="{{ $filters['q'] ?? '' }}" placeholder="Nhập tên dịch vụ...">
+                        <input type="text" name="q" class="form-control" value="{{ $filters['q'] ?? '' }}" placeholder="{{ $placeholder }}">
                     </div>
 
                     @if ($category === 'hotel')
@@ -60,7 +68,7 @@
                         <input type="number" name="gia_den" min="0" class="form-control" value="{{ $filters['gia_den'] ?? '' }}" placeholder="1000000">
                     </div>
 
-                    <div class="col-12 d-flex gap-2">
+                    <div class="col-12 d-flex gap-2 flex-wrap">
                         <button type="submit" class="btn btn-book">Lọc</button>
                         @if ($category === 'hotel')
                             <a href="{{ route('customer.services.hotel') }}" class="btn btn-outline-secondary">Xóa bộ lọc</a>
@@ -82,24 +90,33 @@
                                     <article class="offer-card h-100">
                                         <div class="offer-image">
                                             <img
-                                                src="{{ asset('img/Room' . ($item->HinhAnh ?: 'Don1.jpg')) }}"
-                                                alt="{{ $item->TenPhong }}"
+                                                src="{{ asset($item->roomImagePath()) }}"
+                                                alt="{{ $item->TenLoai }}"
                                                 loading="lazy"
                                             >
                                         </div>
                                         <div class="offer-body">
-                                            <h3>{{ $item->TenPhong }}</h3>
-                                            <p>{{ $item->loaiPhong->TenLoai ?? 'Loại phòng tiêu chuẩn' }} · {{ (int) $item->SoLuongNguoi }} người</p>
+                                            <div class="detail-badge mb-2">Mã loại: {{ $item->MaLoai }}</div>
+                                            <h3>{{ $item->TenLoai }}</h3>
+                                            <p>{{ (int) ($item->SoLuongNguoi ?? 0) }} người · Loại phòng</p>
+                                            <p>{{ \Illuminate\Support\Str::limit($item->MoTa ?: 'Không gian lưu trú thoải mái, phù hợp nghỉ dưỡng ngắn ngày.', 95) }}</p>
                                             <div class="price">{{ number_format($item->GiaPhong ?? 0, 0, ',', '.') }} VND / đêm</div>
-                                            <a href="{{ route('customer.room-detail', $item->TenPhong) }}" class="detail-link">Xem chi tiết</a>
+                                            <a href="{{ route('customer.room-detail', $item->MaLoai) }}" class="detail-link">Xem chi tiết</a>
                                         </div>
                                     </article>
                                 @elseif ($category === 'tour')
                                     <article class="offer-card h-100">
-                                        <div class="offer-image">{{ $item->TenTour }}</div>
+                                        <div class="offer-image">
+                                            <img
+                                                src="{{ asset($item->tourImagePath()) }}"
+                                                alt="{{ $item->TenTour }}"
+                                                loading="lazy"
+                                            >
+                                        </div>
                                         <div class="offer-body">
                                             <h3>{{ $item->TenTour }}</h3>
                                             <p>{{ $item->DiaDiemKhoiHanh ?? 'Cập nhật sau' }} · {{ $item->ThoiLuong }} ngày</p>
+                                            <p>{{ \Illuminate\Support\Str::limit($item->MoTa ?: 'Tour được thiết kế cân bằng giữa tham quan, nghỉ ngơi và chi phí hợp lý.', 95) }}</p>
                                             <div class="price">Từ {{ number_format($item->GiaTourNguoiLon ?? 0, 0, ',', '.') }} VND / người</div>
                                             <a href="{{ route('customer.tour-detail', $item->MaTour) }}" class="detail-link">Xem chi tiết</a>
                                         </div>
@@ -108,7 +125,8 @@
                                     <article class="service-card h-100">
                                         <div class="service-card-icon">DV</div>
                                         <h3>{{ $item->TenDV }}</h3>
-                                        <p>Giá từ {{ number_format($item->GiaDV ?? 0, 0, ',', '.') }} VND</p>
+                                        <p>Dịch vụ bổ sung tiện lợi, dễ kết hợp cùng đặt phòng hoặc tour.</p>
+                                        <div class="price">Giá từ {{ number_format($item->GiaDV ?? 0, 0, ',', '.') }} VND</div>
                                         <a href="{{ route('customer.service-detail', $item->MaDV) }}" class="detail-link">Xem chi tiết</a>
                                     </article>
                                 @endif

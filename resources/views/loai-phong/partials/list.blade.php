@@ -1,16 +1,22 @@
-<table class="table table-bordered table-striped">
+<table class="table table-bordered table-striped align-middle">
     <thead>
         <tr>
             <th>Mã</th>
             <th>Tên loại</th>
+            <th>Giá / đêm</th>
+            <th>Sức chứa</th>
+            <th>Ảnh</th>
             <th>Tác vụ</th>
         </tr>
     </thead>
     <tbody>
-        @foreach($loaiPhong as $loai)
+        @forelse($loaiPhong as $loai)
         <tr>
             <td>{{ $loai->MaLoai }}</td>
             <td>{{ $loai->TenLoai }}</td>
+            <td>{{ number_format($loai->GiaPhong ?? 0, 0, ',', '.') }} VNĐ</td>
+            <td>{{ $loai->SoLuongNguoi ?? '-' }} người</td>
+            <td>{{ $loai->HinhAnh ?: '-' }}</td>
             <td>
                 <a href="{{ route('loai-phong.show', $loai->MaLoai) }}" class="btn btn-sm btn-info"><i class="bi bi-eye"></i> Xem</a>
                 <a href="{{ route('loai-phong.edit', $loai->MaLoai) }}" class="btn btn-sm btn-warning"><i class="bi bi-pencil"></i> Sửa</a>
@@ -21,7 +27,11 @@
                 </form>
             </td>
         </tr>
-        @endforeach
+        @empty
+        <tr>
+            <td colspan="6" class="text-center text-muted py-4">Không có loại phòng.</td>
+        </tr>
+        @endforelse
     </tbody>
 </table>
 

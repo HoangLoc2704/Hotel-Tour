@@ -91,6 +91,20 @@
                 </li>
                 @endif
 
+                <li class="sidebar-header">THƯ VIỆN ẢNH</li>
+
+                <li class="sidebar-item">
+                    <a href="{{ route('anh-phong.index') }}">Quản lý ảnh phòng</a>
+                </li>
+
+                <li class="sidebar-item">
+                    <a href="{{ route('anh-tour.index') }}">Quản lý ảnh tour</a>
+                </li>
+
+                <li class="sidebar-item">
+                    <a href="{{ route('anh-dich-vu.index') }}">Quản lý ảnh dịch vụ</a>
+                </li>
+
                 @if ($canManageExceptPersonnel)
                 <li class="sidebar-header">KINH DOANH</li>
 

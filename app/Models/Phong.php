@@ -8,12 +8,18 @@ class Phong extends Model
 {
     protected $table = 'tbl_Phong';
     protected $primaryKey = 'MaPhong';
-    public $incrementing = false;
-    protected $keyType = 'string';
     public $timestamps = false;
-    
-    protected $fillable = ['MaPhong', 'TenPhong', 'SoLuongNguoi', 'GiaPhong', 'HinhAnh', 'MoTa', 'MaLoai'];
-    
+
+    protected $fillable = [
+        'TenPhong',
+        'MaLoai',
+    ];
+
+    protected $casts = [
+        'MaPhong' => 'integer',
+        'MaLoai' => 'integer',
+    ];
+
     public function loaiPhong()
     {
         return $this->belongsTo(LoaiPhong::class, 'MaLoai', 'MaLoai');
@@ -24,13 +30,39 @@ class Phong extends Model
         return $this->hasMany(HDPhong::class, 'MaPhong', 'MaPhong');
     }
 
-    public function getMotaAttribute()
+    public function getGiaPhongAttribute()
     {
-        return $this->attributes['MoTa'] ?? null;
+        return $this->attributes['GiaPhong'] ?? $this->loaiPhong?->GiaPhong;
     }
 
-    public function setMotaAttribute($value)
+    public function getSoLuongNguoiAttribute()
     {
-        $this->attributes['MoTa'] = $value;
+        return $this->attributes['SoLuongNguoi'] ?? $this->loaiPhong?->SoLuongNguoi;
+    }
+
+    public function getHinhAnhAttribute()
+    {
+        return $this->attributes['HinhAnh'] ?? $this->loaiPhong?->HinhAnh;
+    }
+
+    public function getMoTaAttribute()
+    {
+        return $this->attributes['MoTa'] ?? $this->loaiPhong?->MoTa;
+    }
+
+    public function roomImagePath(?string $imageName = null): string
+    {
+        if ($this->loaiPhong) {
+            return $this->loaiPhong->roomImagePath($imageName ?: $this->HinhAnh);
+        }
+
+        $imageName = $imageName ?: ($this->HinhAnh ?: 'Don1.jpg');
+
+        return 'img/Room/' . $imageName;
+    }
+
+    public function getRoomImagePathAttribute(): string
+    {
+        return $this->roomImagePath();
     }
 }

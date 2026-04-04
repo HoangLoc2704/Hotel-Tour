@@ -436,7 +436,7 @@
 
                 try {
                     const params = new URLSearchParams({
-                        ten_phong: serviceCode,
+                        ma_loai: serviceCode,
                         ngay_nhan: checkin,
                         ngay_tra: checkout,
                     });
@@ -453,7 +453,7 @@
 
                     const data = await response.json();
                     if (data.available) {
-                        setStatus(roomStatusEl, 'success', `Còn ${data.room_count} phòng trống cho lựa chọn này.`);
+                        setStatus(roomStatusEl, 'success', `Còn ${data.room_count} phòng trống cho loại phòng này.`);
                     } else {
                         setStatus(roomStatusEl, 'danger', 'Hiện không còn phòng trống trong khoảng ngày đã chọn.');
                     }

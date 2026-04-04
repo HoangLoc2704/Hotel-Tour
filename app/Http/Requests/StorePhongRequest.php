@@ -14,14 +14,9 @@ class StorePhongRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'MaPhong'       => 'required|string|max:10|unique:tbl_Phong,MaPhong',
-            'TenPhong'      => 'required|string|max:50',
-            'SoLuongNguoi'  => 'required|integer',
-            'GiaPhong'      => 'required|numeric',
-            'HinhAnh'       => 'nullable|string|max:255',
-            'HinhAnhFile'   => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
-            'MoTa'          => 'nullable|string|max:255',
-            'MaLoai'        => 'required|exists:tbl_LoaiPhong,MaLoai',
+            'MaPhong'  => 'nullable|string|max:10',
+            'TenPhong' => 'required|string|max:10|unique:tbl_Phong,TenPhong',
+            'MaLoai'   => 'required|exists:tbl_LoaiPhong,MaLoai',
         ];
     }
 }

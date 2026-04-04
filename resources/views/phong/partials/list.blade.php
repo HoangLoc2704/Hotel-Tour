@@ -3,10 +3,11 @@
         <thead class="table-dark">
             <tr>
                 <th>ID</th>
-                <th>Tên phòng</th>
-                <th>Loại</th>
-                <th>Giá</th>
-                <th>Tên ảnh</th>
+                <th>Tên / mã phòng</th>
+                <th>Loại phòng</th>
+                <th>Sức chứa</th>
+                <th>Giá / đêm</th>
+                <th>Ảnh loại phòng</th>
                 <th>Ngày đã đặt</th>
                 <th>Hành động</th>
             </tr>
@@ -16,8 +17,9 @@
             <tr>
                 <td>{{ $p->MaPhong }}</td>
                 <td>{{ $p->TenPhong }}</td>
-                <td>{{ $p->loaiPhong->TenLoai ?? '' }}</td>
-                <td>{{ number_format($p->GiaPhong, 0, ',', '.') }}</td>
+                <td>{{ $p->loaiPhong->TenLoai ?? '-' }}</td>
+                <td>{{ $p->SoLuongNguoi ?? '-' }} người</td>
+                <td>{{ number_format($p->GiaPhong ?? 0, 0, ',', '.') }} VNĐ</td>
                 <td>{{ $p->HinhAnh ?: '-' }}</td>
                 <td>
                     <div style="position: relative; display: inline-block;">
@@ -51,7 +53,7 @@
                 </td>
             </tr>
             @empty
-            <tr><td colspan="7" class="text-center text-muted py-4">Không có phòng</td></tr>
+            <tr><td colspan="8" class="text-center text-muted py-4">Không có phòng</td></tr>
             @endforelse
         </tbody>
     </table>

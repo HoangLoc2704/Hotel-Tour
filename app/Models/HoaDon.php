@@ -9,9 +9,18 @@ class HoaDon extends Model
     protected $table = 'tbl_HoaDon';
     protected $primaryKey = 'MaHD';
     public $timestamps = false;
-    
+
     protected $fillable = ['MaKH', 'NgayTao', 'ThanhTien', 'TrangThai', 'ThanhToan'];
-    
+
+    protected $casts = [
+        'MaHD' => 'integer',
+        'MaKH' => 'integer',
+        'NgayTao' => 'date:Y-m-d',
+        'ThanhTien' => 'float',
+        'TrangThai' => 'boolean',
+        'ThanhToan' => 'boolean',
+    ];
+
     public function khachHang()
     {
         return $this->belongsTo(KhachHang::class, 'MaKH', 'MaKH');
@@ -32,7 +41,7 @@ class HoaDon extends Model
         return $this->hasMany(HDTOUR::class, 'MaHD', 'MaHD');
     }
 
-    public static function syncDetailThanhToan(string $maHD, int $thanhToan): void
+    public static function syncDetailThanhToan(int|string $maHD, int $thanhToan): void
     {
         $value = $thanhToan ? 1 : 0;
 
@@ -49,7 +58,7 @@ class HoaDon extends Model
             ->update(['ThanhToan' => $value]);
     }
 
-    public static function recalculateThanhTien(string $maHD): void
+    public static function recalculateThanhTien(int|string $maHD): void
     {
         $hoaDon = static::query()->find($maHD);
         if (!$hoaDon) {

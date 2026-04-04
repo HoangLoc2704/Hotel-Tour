@@ -9,9 +9,17 @@ class KhachHang extends Model
     protected $table = 'tbl_KhachHang';
     protected $primaryKey = 'MaKH';
     public $timestamps = false;
-    
+
     protected $fillable = ['TenKH', 'GioiTinh', 'SDT', 'MatKhau', 'TrangThai', 'Email'];
-    
+
+    protected $hidden = ['MatKhau'];
+
+    protected $casts = [
+        'MaKH' => 'integer',
+        'GioiTinh' => 'boolean',
+        'TrangThai' => 'boolean',
+    ];
+
     public function hoaDon()
     {
         return $this->hasMany(HoaDon::class, 'MaKH', 'MaKH');

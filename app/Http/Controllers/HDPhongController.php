@@ -15,11 +15,13 @@ class HDPhongController extends Controller
     public function index(Request $request)
     {
         $search = $request->input('search');
-        $query = HDPhong::with(['hoaDon.khachHang', 'phong']);
+        $query = HDPhong::with(['hoaDon.khachHang', 'phong.loaiPhong']);
+
         if ($search) {
             $query->where('MaHD', 'like', "%{$search}%")
-                  ->orWhere('MaPhong', 'like', "%{$search}%");
+                ->orWhere('MaPhong', 'like', "%{$search}%");
         }
+
         $hdPhong = $query->paginate(10);
 
         if ($request->ajax() && !$this->wantsJson($request)) {
@@ -40,10 +42,12 @@ class HDPhongController extends Controller
             ->with('khachHang:MaKH,TenKH')
             ->orderByDesc('MaHD')
             ->get();
+
         $phongs = \App\Models\Phong::query()
             ->select(['MaPhong', 'TenPhong'])
             ->orderBy('TenPhong')
             ->get();
+
         return view('hd-phong.create', compact('hoaDons', 'phongs'));
     }
 
@@ -73,14 +77,16 @@ class HDPhongController extends Controller
             }
         }
 
-        $phong = Phong::query()->findOrFail($validated['MaPhong']);
+        $phong = Phong::with('loaiPhong:MaLoai,GiaPhong')->findOrFail($validated['MaPhong']);
         $giaPhong = (float) ($phong->GiaPhong ?? 0);
         $soDem = 1;
+
         if (!empty($validated['NgayNhanPhong']) && !empty($validated['NgayTraPhong'])) {
             $nhan = Carbon::parse($validated['NgayNhanPhong']);
             $tra = Carbon::parse($validated['NgayTraPhong']);
             $soDem = max(1, $nhan->diffInDays($tra));
         }
+
         $validated['TongTien'] = $giaPhong * $soDem;
 
         $hdPhong = HDPhong::create($validated);
@@ -95,7 +101,10 @@ class HDPhongController extends Controller
 
     public function show(Request $request, $maHD, $maPhong)
     {
-        $hdPhong = HDPhong::where('MaHD', $maHD)->where('MaPhong', $maPhong)->with(['hoaDon.khachHang', 'phong'])->firstOrFail();
+        $hdPhong = HDPhong::where('MaHD', $maHD)
+            ->where('MaPhong', $maPhong)
+            ->with(['hoaDon.khachHang', 'phong.loaiPhong'])
+            ->firstOrFail();
 
         if ($this->wantsJson($request)) {
             return $this->jsonSuccess($hdPhong, 'Chi tiết hóa đơn phòng');
@@ -116,6 +125,7 @@ class HDPhongController extends Controller
             ->select(['MaPhong', 'TenPhong'])
             ->orderBy('TenPhong')
             ->get();
+
         return view('hd-phong.edit', compact('hdPhong', 'hoaDons', 'phongs'));
     }
 
@@ -124,8 +134,10 @@ class HDPhongController extends Controller
         $hdPhong = HDPhong::where('MaHD', $maHD)->where('MaPhong', $maPhong)->firstOrFail();
         $validated = $request->validated();
 
+        $maPhongMoi = $validated['MaPhong'] ?? $hdPhong->MaPhong;
+
         if (!empty($validated['NgayNhanPhong']) && !empty($validated['NgayTraPhong'])) {
-            $isConflict = HDPhong::where('MaPhong', $hdPhong->MaPhong)
+            $isConflict = HDPhong::where('MaPhong', $maPhongMoi)
                 ->where(function ($query) use ($validated) {
                     $query->whereDate('NgayNhanPhong', '<=', $validated['NgayTraPhong'])
                         ->whereDate('NgayTraPhong', '>=', $validated['NgayNhanPhong']);
@@ -150,18 +162,19 @@ class HDPhongController extends Controller
             }
         }
 
-        $maPhongMoi = $hdPhong->MaPhong;
         $ngayNhan = $validated['NgayNhanPhong'] ?? $hdPhong->NgayNhanPhong;
         $ngayTra = $validated['NgayTraPhong'] ?? $hdPhong->NgayTraPhong;
 
-        $phong = Phong::query()->findOrFail($maPhongMoi);
+        $phong = Phong::with('loaiPhong:MaLoai,GiaPhong')->findOrFail($maPhongMoi);
         $giaPhong = (float) ($phong->GiaPhong ?? 0);
         $soDem = 1;
+
         if (!empty($ngayNhan) && !empty($ngayTra)) {
             $nhan = Carbon::parse($ngayNhan);
             $tra = Carbon::parse($ngayTra);
             $soDem = max(1, $nhan->diffInDays($tra));
         }
+
         $validated['TongTien'] = $giaPhong * $soDem;
 
         HDPhong::query()
@@ -171,6 +184,7 @@ class HDPhongController extends Controller
 
         $hdPhong = HDPhong::where('MaHD', $maHD)
             ->where('MaPhong', $maPhong)
+            ->with(['hoaDon.khachHang', 'phong.loaiPhong'])
             ->firstOrFail();
 
         HoaDon::recalculateThanhTien($maHD);
