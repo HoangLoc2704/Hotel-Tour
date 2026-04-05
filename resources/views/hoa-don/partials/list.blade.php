@@ -1,3 +1,7 @@
+@php
+    $formatDate = fn ($value) => filled($value) ? \Carbon\Carbon::parse($value)->format('d/m/Y') : '-';
+@endphp
+
 <table class="table table-bordered table-striped">
     <thead>
         <tr>
@@ -15,13 +19,14 @@
         <tr>
             <td>{{ $hd->MaHD }}</td>
             <td>{{ $hd->khachHang->TenKH ?? '' }}</td>
-            <td>{{ $hd->NgayTao }}</td>
+            <td>{{ $formatDate($hd->NgayTao) }}</td>
             <td>{{ number_format($hd->ThanhTien, 0, ',', '.') }}</td>
             <td>{{ $hd->TrangThai ? 'Hoạt động' : 'Vô hiệu' }}</td>
             <td>{{ $hd->ThanhToan ? 'Đã thanh toán' : 'Chưa thanh toán' }}</td>
             <td>
                 <a href="{{ route('hoa-don.show', $hd->MaHD) }}" class="btn btn-sm btn-info"><i class="bi bi-eye"></i> Xem</a>
                 <a href="{{ route('hoa-don.edit', $hd->MaHD) }}" class="btn btn-sm btn-warning"><i class="bi bi-pencil"></i> Sửa</a>
+                <a href="{{ route('hoa-don.export-pdf', $hd->MaHD) }}" target="_blank" class="btn btn-sm btn-secondary"><i class="bi bi-file-earmark-pdf"></i> Xuất PDF</a>
                 <form action="{{ route('hoa-don.destroy', $hd->MaHD) }}" method="POST" class="d-inline" onsubmit="return confirm('Xóa hóa đơn?')">
                     @csrf
                     @method('DELETE')

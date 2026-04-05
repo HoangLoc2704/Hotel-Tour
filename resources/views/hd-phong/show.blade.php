@@ -1,5 +1,9 @@
 @extends('layout.main')
 
+@php
+    $formatDate = fn ($value) => filled($value) ? \Carbon\Carbon::parse($value)->format('d/m/Y') : '-';
+@endphp
+
 @section('content')
 <div class="row mb-4">
     <div class="col-md-8">
@@ -24,11 +28,11 @@
             </tr>
             <tr>
                 <th>Ngày nhận phòng:</th>
-                <td>{{ $hdPhong->NgayNhanPhong }}</td>
+                <td>{{ $formatDate($hdPhong->NgayNhanPhong) }}</td>
             </tr>
             <tr>
                 <th>Ngày trả phòng:</th>
-                <td>{{ $hdPhong->NgayTraPhong }}</td>
+                <td>{{ $formatDate($hdPhong->NgayTraPhong) }}</td>
             </tr>
             <tr>
                 <th>Tổng tiền:</th>

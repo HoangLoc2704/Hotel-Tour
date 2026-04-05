@@ -1,5 +1,9 @@
 @extends('layout.main')
 
+@php
+    $formatDate = fn ($value) => filled($value) ? \Carbon\Carbon::parse($value)->format('d/m/Y') : '-';
+@endphp
+
 @section('content')
 <div class="row mb-4">
     <div class="col-md-8">
@@ -8,6 +12,7 @@
     <div class="col-md-4 text-end">
         <a href="{{ route('hoa-don.index') }}" class="btn btn-secondary"><i class="bi bi-arrow-left"></i> Quay lại</a>
         <a href="{{ route('hoa-don.edit', $hoaDon->MaHD) }}" class="btn btn-warning"><i class="bi bi-pencil"></i> Sửa</a>
+        <a href="{{ route('hoa-don.export-pdf', $hoaDon->MaHD) }}" target="_blank" class="btn btn-dark"><i class="bi bi-file-earmark-pdf"></i> Xuất PDF</a>
     </div>
 </div>
 
@@ -24,7 +29,7 @@
             </tr>
             <tr>
                 <th>Ngày tạo:</th>
-                <td>{{ $hoaDon->NgayTao }}</td>
+                <td>{{ $formatDate($hoaDon->NgayTao) }}</td>
             </tr>
             <tr>
                 <th>Thành tiền:</th>

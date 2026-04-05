@@ -22,7 +22,9 @@ class HDPhongController extends Controller
                 ->orWhere('MaPhong', 'like', "%{$search}%");
         }
 
-        $hdPhong = $query->paginate(10);
+        $hdPhong = $query
+            ->orderByDesc('MaHD')
+            ->paginate(10);
 
         if ($request->ajax() && !$this->wantsJson($request)) {
             return view('hd-phong.partials.list', compact('hdPhong'));

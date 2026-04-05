@@ -19,7 +19,10 @@ class HDTOURController extends Controller
             $query->where('MaHD', 'like', "%{$search}%")
                   ->orWhere('MaLKH', 'like', "%{$search}%");
         }
-        $hdTour = $query->paginate(10);
+
+        $hdTour = $query
+            ->orderByDesc('MaHD')
+            ->paginate(10);
         if ($request->ajax() && !$this->wantsJson($request)) {
             return view('hd-tour.partials.list', compact('hdTour'));
         }

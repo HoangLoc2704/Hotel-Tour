@@ -1,3 +1,7 @@
+@php
+    $formatDate = fn ($value) => filled($value) ? \Carbon\Carbon::parse($value)->format('d/m/Y') : '-';
+@endphp
+
 <div class="table-responsive">
     <table class="table table-striped">
         <thead>
@@ -16,8 +20,8 @@
             <tr>
                 <td>{{ $lkh->MaLKH }}</td>
                 <td>{{ $lkh->tour->TenTour ?? 'N/A' }}</td>
-                <td>{{ $lkh->NgayKhoiHanh }}</td>
-                <td>{{ $lkh->NgayKetThuc }}</td>
+                <td>{{ $formatDate($lkh->NgayKhoiHanh) }}</td>
+                <td>{{ $formatDate($lkh->NgayKetThuc) }}</td>
                 <td>{{ $lkh->SoChoConLai }}</td>
                 <td>{{ $lkh->huongDanVien->TenHDV ?? 'N/A' }}</td>
                 <td>

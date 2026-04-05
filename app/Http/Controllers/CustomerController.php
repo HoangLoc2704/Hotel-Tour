@@ -309,7 +309,9 @@ class CustomerController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        return view('customer.invoices', compact('hoaDons', 'filters'));
+        $customerProfile = $this->getCustomerProfile();
+
+        return view('customer.invoices', compact('hoaDons', 'filters', 'customerProfile'));
     }
 
     public function showInvoice(string $maHD): View|RedirectResponse
@@ -333,7 +335,144 @@ class CustomerController extends Controller
             ->where('MaKH', $customerId)
             ->findOrFail($maHD);
 
-        return view('customer.invoice-detail', compact('hoaDon'));
+        $customerProfile = $this->getCustomerProfile();
+
+        return view('customer.invoice-detail', compact('hoaDon', 'customerProfile'));
+    }
+
+    public function updateProfile(Request $request): RedirectResponse
+    {
+        $customerId = Session::get('customer_user_id');
+        if (!$customerId) {
+            return redirect()
+                ->route('customer.login')
+                ->with('error', 'Vui lòng đăng nhập để cập nhật thông tin.');
+        }
+
+        $validated = $request->validate([
+            'ho_ten' => 'required|string|max:100',
+            'gioi_tinh' => 'required|in:0,1',
+            'mat_khau' => 'nullable|string|min:6|confirmed',
+        ]);
+
+        $khachHang = KhachHang::query()->find($customerId);
+        if (!$khachHang) {
+            return redirect()
+                ->route('customer.login')
+                ->with('error', 'Không tìm thấy tài khoản khách hàng. Vui lòng đăng nhập lại.');
+        }
+
+        $updates = [
+            'TenKH' => trim((string) $validated['ho_ten']),
+            'GioiTinh' => (int) $validated['gioi_tinh'],
+        ];
+
+        if (!empty($validated['mat_khau'])) {
+            $updates['MatKhau'] = Hash::make($validated['mat_khau']);
+        }
+
+        $khachHang->update($updates);
+
+        Session::put('customer_user_name', $khachHang->TenKH);
+        Session::put('customer_user_phone', $khachHang->SDT);
+        Session::put('customer_user_email', $khachHang->Email);
+
+        return back()->with('success', 'Cập nhật thông tin khách hàng thành công.');
+    }
+
+    public function cancelInvoice(string $maHD): RedirectResponse
+    {
+        $customerId = Session::get('customer_user_id');
+        if (!$customerId) {
+            return redirect()
+                ->route('customer.login')
+                ->with('error', 'Vui lòng đăng nhập để hủy hóa đơn của bạn.');
+        }
+
+        try {
+            $result = DB::transaction(function () use ($customerId, $maHD) {
+                $hoaDon = HoaDon::query()
+                    ->where('MaKH', $customerId)
+                    ->where('MaHD', $maHD)
+                    ->lockForUpdate()
+                    ->first();
+
+                if (!$hoaDon) {
+                    return 'not_found';
+                }
+
+                if ((int) $hoaDon->TrangThai === 0) {
+                    return 'already_cancelled';
+                }
+
+                $hdTours = HDTOUR::query()
+                    ->where('MaHD', $hoaDon->MaHD)
+                    ->lockForUpdate()
+                    ->get(['MaLKH', 'SoNguoiLon', 'SoTreEm', 'TrangThai']);
+
+                foreach ($hdTours as $hdTour) {
+                    if ((int) $hdTour->TrangThai !== 1) {
+                        continue;
+                    }
+
+                    $tongNguoi = (int) $hdTour->SoNguoiLon + (int) $hdTour->SoTreEm;
+                    if ($tongNguoi <= 0) {
+                        continue;
+                    }
+
+                    LichKhoiHanh::query()
+                        ->where('MaLKH', $hdTour->MaLKH)
+                        ->lockForUpdate()
+                        ->increment('SoChoConLai', $tongNguoi);
+                }
+
+                HDPhong::query()
+                    ->where('MaHD', $hoaDon->MaHD)
+                    ->where('TrangThai', 1)
+                    ->update(['TrangThai' => 0]);
+
+                HDDichVu::query()
+                    ->where('MaHD', $hoaDon->MaHD)
+                    ->where('TrangThai', 1)
+                    ->update(['TrangThai' => 0]);
+
+                HDTOUR::query()
+                    ->where('MaHD', $hoaDon->MaHD)
+                    ->where('TrangThai', 1)
+                    ->update(['TrangThai' => 0]);
+
+                $hoaDon->TrangThai = 0;
+                $hoaDon->save();
+
+                return 'cancelled';
+            });
+        } catch (\Throwable $exception) {
+            Log::error('Customer invoice cancellation failed.', [
+                'ma_hd' => $maHD,
+                'customer_id' => $customerId,
+                'error' => $exception->getMessage(),
+            ]);
+
+            return redirect()
+                ->route('customer.invoices')
+                ->with('error', 'Không thể hủy hóa đơn lúc này. Vui lòng thử lại.');
+        }
+
+        if ($result === 'not_found') {
+            return redirect()
+                ->route('customer.invoices')
+                ->with('error', 'Không tìm thấy hóa đơn cần hủy.');
+        }
+
+        if ($result === 'already_cancelled') {
+            return redirect()
+                ->route('customer.invoices')
+                ->with('info', 'Hóa đơn này đã ở trạng thái vô hiệu trước đó.');
+        }
+
+        return redirect()
+            ->route('customer.invoices')
+            ->with('success', 'Đã hủy hóa đơn thành công.');
     }
 
     public function login(): View
@@ -346,53 +485,85 @@ class CustomerController extends Controller
         return view('customer.register');
     }
 
-    public function sendRegisterOtp(Request $request): RedirectResponse
+    public function registerOtp(): View|RedirectResponse
     {
-        $validated = $request->validate([
-            'ho_ten' => 'required|string|max:100',
-            'email' => 'required|email|max:100',
-            'so_dien_thoai' => 'required|string|max:20',
-            'mat_khau' => 'required|string|min:6|confirmed',
-        ]);
+        $pendingRegistration = Session::get('customer_register_payload');
 
-        $otp = (string) random_int(100000, 999999);
-
-        Session::put('customer_register_otp_hash', Hash::make($otp));
-        Session::put('customer_register_otp_expires_at', now()->addMinutes(5)->timestamp);
-        Session::put('customer_register_payload', [
-            'ho_ten' => $validated['ho_ten'],
-            'email' => $validated['email'],
-            'so_dien_thoai' => $validated['so_dien_thoai'],
-            'mat_khau' => $validated['mat_khau'],
-        ]);
-
-        try {
-            Mail::raw(
-                "Ma OTP dang ky tai khoan cua ban la: {$otp}. Ma co hieu luc trong 5 phut.",
-                function ($message) use ($validated) {
-                    $message->to($validated['email'])
-                        ->subject('Ma OTP dang ky tai khoan');
-                }
-            );
-        } catch (\Exception $e) {
-            return back()->withErrors([
-                'otp' => 'Khong the gui ma OTP luc nay. Vui long thu lai sau.',
-            ])->withInput($request->except(['mat_khau', 'mat_khau_confirmation', 'otp']));
+        if (!is_array($pendingRegistration) || empty($pendingRegistration['email'])) {
+            return redirect()
+                ->route('customer.register')
+                ->with('error', 'Vui lòng nhập thông tin đăng ký trước khi xác thực OTP.');
         }
 
-        return back()
-            ->with('otp_sent', true)
-            ->with('success', 'Da gui ma OTP ve email cua ban. Vui long nhap OTP de hoan tat dang ky.')
-            ->withInput($request->except(['otp']));
+        $otpExpiresAt = Session::get('customer_register_otp_expires_at');
+
+        return view('customer.register-otp', compact('pendingRegistration', 'otpExpiresAt'));
+    }
+
+    public function sendRegisterOtp(Request $request): RedirectResponse
+    {
+        $isResend = $request->boolean('resend');
+
+        if ($isResend) {
+            $payload = Session::get('customer_register_payload');
+
+            if (!is_array($payload) || empty($payload['email'])) {
+                return redirect()
+                    ->route('customer.register')
+                    ->with('error', 'Phiên đăng ký đã hết hạn. Vui lòng nhập lại thông tin.');
+            }
+        } else {
+            $validated = $request->validate([
+                'ho_ten' => 'required|string|max:100',
+                'email' => 'required|email|max:100',
+                'so_dien_thoai' => 'required|string|max:20',
+                'mat_khau' => 'required|string|min:6|confirmed',
+            ]);
+
+            [$matchedCustomer, $duplicateErrors] = $this->resolveRegisterCustomer(
+                (string) $validated['email'],
+                (string) $validated['so_dien_thoai']
+            );
+
+            if (!empty($duplicateErrors)) {
+                throw ValidationException::withMessages($duplicateErrors);
+            }
+
+            $payload = [
+                'ho_ten' => trim((string) $validated['ho_ten']),
+                'email' => Str::lower(trim((string) $validated['email'])),
+                'so_dien_thoai' => trim((string) $validated['so_dien_thoai']),
+                'mat_khau_hash' => Hash::make($validated['mat_khau']),
+                'matched_customer_id' => $matchedCustomer?->MaKH,
+            ];
+
+            Session::put('customer_register_payload', $payload);
+        }
+
+        $otp = (string) random_int(100000, 999999);
+        Session::put('customer_register_otp_hash', Hash::make($otp));
+        Session::put('customer_register_otp_expires_at', now()->addMinutes(5)->timestamp);
+
+        try {
+            $this->sendRegisterOtpEmail((string) $payload['email'], $otp);
+        } catch (\Exception $e) {
+            return redirect()
+                ->route($isResend ? 'customer.register.otp' : 'customer.register')
+                ->withErrors([
+                    'otp' => 'Không thể gửi mã OTP lúc này. Vui lòng thử lại sau.',
+                ]);
+        }
+
+        return redirect()
+            ->route('customer.register.otp')
+            ->with('success', $isResend
+                ? 'Đã gửi lại mã OTP về email của bạn.'
+                : 'Đã gửi mã OTP về email của bạn. Vui lòng nhập OTP để hoàn tất đăng ký.');
     }
 
     public function submitRegister(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'ho_ten' => 'required|string|max:100',
-            'email' => 'required|email|max:100',
-            'so_dien_thoai' => 'required|string|max:20',
-            'mat_khau' => 'required|string|min:6|confirmed',
             'otp' => 'required|digits:6',
         ]);
 
@@ -400,55 +571,111 @@ class CustomerController extends Controller
         $otpExpiresAt = (int) Session::get('customer_register_otp_expires_at', 0);
         $payload = Session::get('customer_register_payload');
 
-        if (empty($otpHash) || empty($payload) || now()->timestamp > $otpExpiresAt) {
+        if (empty($otpHash) || !is_array($payload) || now()->timestamp > $otpExpiresAt) {
             Session::forget(['customer_register_otp_hash', 'customer_register_otp_expires_at', 'customer_register_payload']);
 
-            return back()->withErrors([
-                'otp' => 'OTP da het han hoac khong ton tai. Vui long bam Dang ky de nhan ma moi.',
-            ])->withInput($request->except(['mat_khau', 'mat_khau_confirmation', 'otp']));
-        }
-
-        if (
-            ($payload['ho_ten'] ?? '') !== $validated['ho_ten']
-            || ($payload['email'] ?? '') !== $validated['email']
-            || ($payload['so_dien_thoai'] ?? '') !== $validated['so_dien_thoai']
-        ) {
-            return back()->withErrors([
-                'otp' => 'Thong tin da thay doi sau khi gui OTP. Vui long bam Dang ky de nhan OTP moi.',
-            ])->withInput($request->except(['mat_khau', 'mat_khau_confirmation', 'otp']));
+            return redirect()
+                ->route('customer.register')
+                ->withErrors([
+                    'otp' => 'Mã OTP đã hết hạn hoặc không tồn tại. Vui lòng thực hiện đăng ký lại.',
+                ]);
         }
 
         if (!Hash::check((string) $validated['otp'], (string) $otpHash)) {
             return back()->withErrors([
-                'otp' => 'Ma OTP khong dung. Vui long kiem tra lai.',
-            ])->withInput($request->except(['mat_khau', 'mat_khau_confirmation']));
+                'otp' => 'Mã OTP không đúng. Vui lòng kiểm tra lại.',
+            ]);
         }
 
-        $existingCustomer = KhachHang::query()
-            ->where('TenKH', $validated['ho_ten'])
-            ->where('Email', $validated['email'])
-            ->where('SDT', $validated['so_dien_thoai'])
-            ->first();
+        [$matchedCustomer, $duplicateErrors] = $this->resolveRegisterCustomer(
+            (string) ($payload['email'] ?? ''),
+            (string) ($payload['so_dien_thoai'] ?? '')
+        );
+
+        if (!empty($duplicateErrors)) {
+            Session::forget(['customer_register_otp_hash', 'customer_register_otp_expires_at', 'customer_register_payload']);
+
+            return redirect()
+                ->route('customer.register')
+                ->withErrors($duplicateErrors)
+                ->withInput([
+                    'ho_ten' => $payload['ho_ten'] ?? '',
+                    'email' => $payload['email'] ?? '',
+                    'so_dien_thoai' => $payload['so_dien_thoai'] ?? '',
+                ]);
+        }
 
         $customerData = [
-            'TenKH' => $validated['ho_ten'],
-            'Email' => $validated['email'],
-            'SDT' => $validated['so_dien_thoai'],
-            'MatKhau' => Hash::make($validated['mat_khau']),
+            'TenKH' => trim((string) ($payload['ho_ten'] ?? '')),
+            'Email' => Str::lower(trim((string) ($payload['email'] ?? ''))),
+            'SDT' => trim((string) ($payload['so_dien_thoai'] ?? '')),
+            'MatKhau' => $payload['mat_khau_hash'] ?? Hash::make(Str::random(12)),
             'TrangThai' => 1,
         ];
 
-        if ($existingCustomer) {
-            $existingCustomer->update($customerData);
-            $successMessage = 'Tai khoan da ton tai, he thong da cap nhat thong tin va mat khau thanh cong.';
+        if ($matchedCustomer && (int) $matchedCustomer->TrangThai === 0) {
+            $matchedCustomer->update($customerData);
+            $successMessage = 'Xác thực OTP thành công. Tài khoản khách hàng đã được cập nhật và kích hoạt.';
         } else {
             KhachHang::query()->create($customerData);
-            $successMessage = 'Dang ky tai khoan khach hang thanh cong. Vui long dang nhap de tiep tuc.';
+            $successMessage = 'Đăng ký tài khoản khách hàng thành công. Vui lòng đăng nhập để tiếp tục.';
         }
 
         Session::forget(['customer_register_otp_hash', 'customer_register_otp_expires_at', 'customer_register_payload']);
 
         return redirect()->route('customer.login')->with('success', $successMessage);
+    }
+
+    private function resolveRegisterCustomer(string $email, string $soDienThoai): array
+    {
+        $normalizedEmail = Str::lower(trim($email));
+        $normalizedPhone = trim($soDienThoai);
+
+        $emailCustomer = KhachHang::query()
+            ->where('Email', $normalizedEmail)
+            ->first();
+
+        $phoneCustomer = KhachHang::query()
+            ->where('SDT', $normalizedPhone)
+            ->first();
+
+        $errors = [];
+
+        if ($emailCustomer && (int) $emailCustomer->TrangThai === 1) {
+            $errors['email'] = 'Email này đã tồn tại trong hệ thống. Vui lòng nhập email khác.';
+        }
+
+        if ($phoneCustomer && (int) $phoneCustomer->TrangThai === 1) {
+            $errors['so_dien_thoai'] = 'Số điện thoại này đã tồn tại trong hệ thống. Vui lòng nhập số khác.';
+        }
+
+        if ($emailCustomer && $phoneCustomer && (string) $emailCustomer->MaKH !== (string) $phoneCustomer->MaKH) {
+            $errors['email'] = $errors['email'] ?? 'Email và số điện thoại đang trùng với hai khách hàng khác nhau. Vui lòng kiểm tra lại.';
+            $errors['so_dien_thoai'] = $errors['so_dien_thoai'] ?? 'Email và số điện thoại đang trùng với hai khách hàng khác nhau. Vui lòng kiểm tra lại.';
+
+            return [null, $errors];
+        }
+
+        return [$emailCustomer ?: $phoneCustomer, $errors];
+    }
+
+    private function sendRegisterOtpEmail(string $email, string $otp): void
+    {
+        $defaultMailer = (string) config('mail.default', 'log');
+        $smtpUsername = (string) config('mail.mailers.smtp.username', '');
+        $fromAddress = (string) config('mail.from.address', '');
+
+        if ($defaultMailer === 'log' || blank($smtpUsername) || blank($fromAddress)) {
+            throw new \RuntimeException('Hệ thống chưa được cấu hình SMTP để gửi email thật.');
+        }
+
+        Mail::raw(
+            "Mã OTP đăng ký tài khoản của bạn là: {$otp}. Mã có hiệu lực trong 5 phút.",
+            function ($message) use ($email) {
+                $message->to($email)
+                    ->subject('Mã OTP đăng ký tài khoản');
+            }
+        );
     }
 
     public function submitLogin(Request $request): RedirectResponse
@@ -574,7 +801,7 @@ class CustomerController extends Controller
         }
 
         return KhachHang::query()
-            ->select(['MaKH', 'TenKH', 'SDT', 'Email'])
+            ->select(['MaKH', 'TenKH', 'GioiTinh', 'SDT', 'Email'])
             ->find($customerId);
     }
 
@@ -1425,8 +1652,8 @@ class CustomerController extends Controller
             ->map(function ($lkh) use ($tour) {
                 return [
                     'ma_lkh' => $lkh->MaLKH,
-                    'ngay_khoi_hanh' => $lkh->NgayKhoiHanh,
-                    'ngay_ket_thuc' => $lkh->NgayKetThuc,
+                    'ngay_khoi_hanh' => filled($lkh->NgayKhoiHanh) ? Carbon::parse($lkh->NgayKhoiHanh)->format('d/m/Y') : '-',
+                    'ngay_ket_thuc' => filled($lkh->NgayKetThuc) ? Carbon::parse($lkh->NgayKetThuc)->format('d/m/Y') : '-',
                     'so_cho_con_lai' => (int) $lkh->SoChoConLai,
                     'gia_nguoi_lon' => (float) $tour->GiaTourNguoiLon,
                     'gia_tre_em' => (float) $tour->GiaTourTreEm,

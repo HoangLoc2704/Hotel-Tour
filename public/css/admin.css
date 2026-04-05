@@ -102,6 +102,38 @@ body {
     border-radius: 12px;
     padding: 20px;
     color: #fff;
+    min-height: 150px;
+    display: flex;
+    align-items: center;
+}
+
+.dashboard-card .card-body {
+    width: 100%;
+}
+
+.dashboard-summary-row .card-title {
+    min-height: 48px;
+    margin-bottom: 0.75rem;
+}
+
+.dashboard-report-form .form-label {
+    font-weight: 600;
+}
+
+.dashboard-report-form .form-control,
+.dashboard-report-actions {
+    height: 42px;
+}
+
+.dashboard-report-actions .btn {
+    min-height: 42px;
+}
+
+.dashboard-report-card-body {
+    min-height: 146px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
 .card-green {
@@ -249,4 +281,24 @@ body {
     border-color: transparent;
     color: #adb5bd;
     opacity: 0.7;
+}
+
+@media (max-width: 991.98px) {
+    .dashboard-report-actions {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .dashboard-card {
+        min-height: 130px;
+    }
+
+    .dashboard-summary-row .card-title {
+        min-height: auto;
+    }
+
+    .dashboard-report-actions {
+        grid-template-columns: 1fr;
+    }
 }

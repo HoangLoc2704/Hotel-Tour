@@ -19,7 +19,10 @@ class HDDichVuController extends Controller
             $query->where('MaHD', 'like', "%{$search}%")
                   ->orWhere('MaDV', 'like', "%{$search}%");
         }
-        $hdDichVu = $query->paginate(10);
+
+        $hdDichVu = $query
+            ->orderByDesc('MaHD')
+            ->paginate(10);
 
         if ($request->ajax() && !$this->wantsJson($request)) {
             return view('hd-dich-vu.partials.list', compact('hdDichVu'));

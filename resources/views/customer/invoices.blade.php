@@ -2,6 +2,10 @@
 
 @section('title', 'Hóa đơn của tôi')
 
+@php
+    $formatDate = fn ($value) => filled($value) ? \Carbon\Carbon::parse($value)->format('d/m/Y') : '-';
+@endphp
+
 @section('content')
     <main class="container py-5">
         <section>
@@ -10,6 +14,8 @@
                     <h2>Hóa đơn của tôi</h2>
                     <p>Danh sách hóa đơn tương ứng với tài khoản khách hàng đang đăng nhập.</p>
                 </div>
+
+                @include('customer.partials.profile-card', ['customerProfile' => $customerProfile])
 
                 <form method="GET" action="{{ route('customer.invoices') }}" class="row g-3 mb-4">
                     <div class="col-md-4">
@@ -34,6 +40,14 @@
                     </div>
                 </form>
 
+                @if (session('success'))
+                    <div class="alert alert-success">{{ session('success') }}</div>
+                @endif
+
+                @if (session('info'))
+                    <div class="alert alert-info">{{ session('info') }}</div>
+                @endif
+
                 @if (session('error'))
                     <div class="alert alert-danger">{{ session('error') }}</div>
                 @endif
@@ -47,7 +61,7 @@
                                 <div class="card-header bg-white d-flex flex-wrap justify-content-between gap-2">
                                     <div>
                                         <strong>Mã hóa đơn:</strong> #{{ $hoaDon->MaHD }}
-                                        <span class="ms-3"><strong>Ngày tạo:</strong> {{ $hoaDon->NgayTao }}</span>
+                                        <span class="ms-3"><strong>Ngày tạo:</strong> {{ $formatDate($hoaDon->NgayTao) }}</span>
                                     </div>
                                     <div class="d-flex gap-2">
                                         <span class="badge text-bg-{{ (int) $hoaDon->TrangThai === 1 ? 'success' : 'secondary' }}">
@@ -65,8 +79,18 @@
                                         {{ number_format((float) $hoaDon->ThanhTien, 0, ',', '.') }} VND
                                     </div>
 
-                                    <div class="mb-3">
+                                    <div class="mb-3 d-flex flex-wrap gap-2">
                                         <a href="{{ route('customer.invoices.show', $hoaDon->MaHD) }}" class="btn btn-outline-primary btn-sm">Xem chi tiết</a>
+
+                                        @if ((int) $hoaDon->TrangThai === 1)
+                                            <form method="POST" action="{{ route('customer.invoices.cancel', $hoaDon->MaHD) }}" onsubmit="return confirm('Bạn có chắc muốn hủy hóa đơn này không?');">
+                                                @csrf
+                                                @method('PATCH')
+                                                <button type="submit" class="btn btn-outline-danger btn-sm">Hủy đơn</button>
+                                            </form>
+                                        @else
+                                            <button type="button" class="btn btn-outline-secondary btn-sm" disabled>Đã vô hiệu</button>
+                                        @endif
                                     </div>
                                 </div>
                             </div>

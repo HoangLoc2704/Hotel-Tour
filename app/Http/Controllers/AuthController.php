@@ -6,6 +6,7 @@ use App\Models\HoaDon;
 use App\Models\KhachHang;
 use App\Models\NhanVien;
 use App\Models\Phong;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -66,12 +67,30 @@ class AuthController extends Controller
         return redirect()->route('login');
     }
 
-    public function showAdmin()
+    public function showAdmin(Request $request)
     {
         // Kiểm tra đăng nhập
         if (!Session::has('user_id')) {
             return redirect()->route('login');
         }
+
+        $filters = $request->validate([
+            'report_date' => 'nullable|date',
+            'report_month' => ['nullable', 'regex:/^\d{4}-\d{2}$/'],
+            'report_year' => 'nullable|integer|min:2000|max:2100',
+        ]);
+
+        $selectedDate = !empty($filters['report_date'])
+            ? Carbon::parse($filters['report_date'])
+            : now();
+
+        $selectedMonth = !empty($filters['report_month'])
+            ? Carbon::createFromFormat('Y-m', $filters['report_month'])->startOfMonth()
+            : now()->startOfMonth();
+
+        $selectedYear = !empty($filters['report_year'])
+            ? Carbon::create((int) $filters['report_year'], 1, 1)->startOfYear()
+            : now()->startOfYear();
 
         $user = [
             'name' => Session::get('user_name'),
@@ -86,7 +105,47 @@ class AuthController extends Controller
             'hoa_don' => HoaDon::count(),
         ];
 
-        return view('admin', compact('user', 'counts'));
+        $revenueBaseQuery = HoaDon::query()
+            ->where('TrangThai', 1)
+            ->where('ThanhToan', 1);
+
+        $revenueReport = [
+            'day' => [
+                'label' => $selectedDate->format('d/m/Y'),
+                'total' => (float) (clone $revenueBaseQuery)
+                    ->whereDate('NgayTao', $selectedDate->toDateString())
+                    ->sum('ThanhTien'),
+                'count' => (int) (clone $revenueBaseQuery)
+                    ->whereDate('NgayTao', $selectedDate->toDateString())
+                    ->count(),
+            ],
+            'month' => [
+                'label' => 'Tháng ' . $selectedMonth->format('m/Y'),
+                'total' => (float) (clone $revenueBaseQuery)
+                    ->whereYear('NgayTao', $selectedMonth->year)
+                    ->whereMonth('NgayTao', $selectedMonth->month)
+                    ->sum('ThanhTien'),
+                'count' => (int) (clone $revenueBaseQuery)
+                    ->whereYear('NgayTao', $selectedMonth->year)
+                    ->whereMonth('NgayTao', $selectedMonth->month)
+                    ->count(),
+            ],
+            'year' => [
+                'label' => 'Năm ' . $selectedYear->format('Y'),
+                'total' => (float) (clone $revenueBaseQuery)
+                    ->whereYear('NgayTao', $selectedYear->year)
+                    ->sum('ThanhTien'),
+                'count' => (int) (clone $revenueBaseQuery)
+                    ->whereYear('NgayTao', $selectedYear->year)
+                    ->count(),
+            ],
+        ];
+
+        if ($request->ajax()) {
+            return view('admin.partials.dashboard-content', compact('user', 'counts', 'revenueReport', 'filters'));
+        }
+
+        return view('admin', compact('user', 'counts', 'revenueReport', 'filters'));
     }
 
     public function testDb()

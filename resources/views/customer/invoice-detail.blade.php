@@ -2,6 +2,10 @@
 
 @section('title', 'Chi tiết hóa đơn')
 
+@php
+    $formatDate = fn ($value) => filled($value) ? \Carbon\Carbon::parse($value)->format('d/m/Y') : '-';
+@endphp
+
 @section('content')
     <main class="container py-5">
         <section>
@@ -14,6 +18,16 @@
                     <a href="{{ route('customer.invoices') }}" class="btn btn-outline-secondary">Quay lại danh sách</a>
                 </div>
 
+                @if (session('success'))
+                    <div class="alert alert-success">{{ session('success') }}</div>
+                @endif
+
+                @if (session('error'))
+                    <div class="alert alert-danger">{{ session('error') }}</div>
+                @endif
+
+                @include('customer.partials.profile-card', ['customerProfile' => $customerProfile])
+
                 <div class="card border-0 shadow-sm mb-4">
                     <div class="card-body">
                         <div class="row g-3">
@@ -21,7 +35,7 @@
                                 <strong>Mã hóa đơn:</strong> #{{ $hoaDon->MaHD }}
                             </div>
                             <div class="col-md-4">
-                                <strong>Ngày tạo:</strong> {{ $hoaDon->NgayTao }}
+                                <strong>Ngày tạo:</strong> {{ $formatDate($hoaDon->NgayTao) }}
                             </div>
                             <div class="col-md-4">
                                 <strong>Tổng tiền:</strong> {{ number_format((float) $hoaDon->ThanhTien, 0, ',', '.') }} VND
@@ -75,8 +89,8 @@
                                             <tr>
                                                 <td>{{ $item->MaPhong }}</td>
                                                 <td>{{ $item->phong->TenPhong ?? '-' }}</td>
-                                                <td>{{ $item->NgayNhanPhong }}</td>
-                                                <td>{{ $item->NgayTraPhong }}</td>
+                                                <td>{{ $formatDate($item->NgayNhanPhong) }}</td>
+                                                <td>{{ $formatDate($item->NgayTraPhong) }}</td>
                                                 <td>{{ (int) $item->TrangThai === 1 ? 'Hoạt động' : 'Vô hiệu' }}</td>
                                                 <td>{{ (int) $item->ThanhToan === 1 ? 'Đã thanh toán' : 'Chưa thanh toán' }}</td>
                                                 <td class="text-end">{{ number_format((float) $item->TongTien, 0, ',', '.') }} VND</td>
@@ -151,8 +165,8 @@
                                             <tr>
                                                 <td>{{ $item->MaLKH }}</td>
                                                 <td>{{ $item->lichKhoiHanh->tour->TenTour ?? '-' }}</td>
-                                                <td>{{ $item->lichKhoiHanh->NgayKhoiHanh ?? '-' }}</td>
-                                                <td>{{ $item->lichKhoiHanh->NgayKetThuc ?? '-' }}</td>
+                                                <td>{{ $formatDate($item->lichKhoiHanh->NgayKhoiHanh ?? null) }}</td>
+                                                <td>{{ $formatDate($item->lichKhoiHanh->NgayKetThuc ?? null) }}</td>
                                                 <td>{{ (int) $item->SoNguoiLon }}</td>
                                                 <td>{{ (int) $item->SoTreEm }}</td>
                                                 <td>{{ (int) $item->TrangThai === 1 ? 'Hoạt động' : 'Vô hiệu' }}</td>

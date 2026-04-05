@@ -17,7 +17,10 @@ class HoaDonController extends Controller
                 $q->where('TenKH', 'like', "%{$search}%");
             })->orWhere('MaHD', 'like', "%{$search}%");
         }
-        $hoaDon = $query->paginate(10);
+
+        $hoaDon = $query
+            ->orderByDesc('MaHD')
+            ->paginate(10);
         if ($request->ajax() && !$this->wantsJson($request)) {
             return view('hoa-don.partials.list', compact('hoaDon'));
         }
@@ -63,6 +66,21 @@ class HoaDonController extends Controller
         }
 
         return view('hoa-don.show', compact('hoaDon'));
+    }
+
+    public function exportPdf($id)
+    {
+        $hoaDon = HoaDon::query()
+            ->with([
+                'khachHang:MaKH,TenKH,SDT,Email',
+                'hdPhongs.phong:MaPhong,TenPhong',
+                'hdDichVus.dichVu:MaDV,TenDV',
+                'hdTours.lichKhoiHanh:MaLKH,MaTour,NgayKhoiHanh,NgayKetThuc',
+                'hdTours.lichKhoiHanh.tour:MaTour,TenTour',
+            ])
+            ->findOrFail($id);
+
+        return view('hoa-don.pdf', compact('hoaDon'));
     }
 
     public function edit($id)

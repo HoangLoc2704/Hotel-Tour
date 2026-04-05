@@ -29,11 +29,14 @@ Route::post('/customer/cart/remove', [CustomerController::class, 'removeCartItem
 Route::post('/customer/cart/checkout', [CustomerController::class, 'checkoutCart'])->name('customer.cart.checkout');
 Route::get('/customer/login', [CustomerController::class, 'login'])->name('customer.login');
 Route::get('/customer/register', [CustomerController::class, 'register'])->name('customer.register');
+Route::get('/customer/register/otp', [CustomerController::class, 'registerOtp'])->name('customer.register.otp');
 Route::post('/customer/login', [CustomerController::class, 'submitLogin'])->name('customer.login.submit');
 Route::post('/customer/register/send-otp', [CustomerController::class, 'sendRegisterOtp'])->name('customer.register.send-otp');
 Route::post('/customer/register', [CustomerController::class, 'submitRegister'])->name('customer.register.submit');
 Route::post('/customer/logout', [CustomerController::class, 'logout'])->name('customer.logout');
+Route::patch('/customer/profile', [CustomerController::class, 'updateProfile'])->name('customer.profile.update');
 Route::get('/customer/invoices', [CustomerController::class, 'invoices'])->name('customer.invoices');
+Route::patch('/customer/invoices/{maHD}/cancel', [CustomerController::class, 'cancelInvoice'])->name('customer.invoices.cancel');
 Route::get('/customer/invoices/{maHD}', [CustomerController::class, 'showInvoice'])->name('customer.invoices.show');
 Route::get('/customer/check-available-rooms', [CustomerController::class, 'checkAvailableRooms'])->name('customer.check-available-rooms');
 Route::get('/customer/get-tour-schedules', [CustomerController::class, 'getTourSchedules'])->name('customer.get-tour-schedules');
@@ -74,6 +77,7 @@ Route::middleware(['auth.check'])->group(function () {
         Route::resource('loai-phong', LoaiPhongController::class);
         Route::resource('phong', PhongController::class);
         Route::resource('huong-dan-vien', HuongDanVienController::class);
+        Route::get('hoa-don/{id}/pdf', [HoaDonController::class, 'exportPdf'])->name('hoa-don.export-pdf');
         Route::resource('hoa-don', HoaDonController::class);
         Route::resource('dich-vu', DichVuController::class);
 
