@@ -142,7 +142,6 @@
             <!-- Navbar -->
             <nav class="navbar d-flex justify-content-end align-items-center gap-2 flex-wrap">
                 <span class="me-2">Xin chào, {{ session('user_name') ?? 'Admin' }}</span>
-                <a href="{{ route('admin.profile') }}" class="btn btn-sm btn-outline-primary">Thông tin cá nhân</a>
                 <form method="POST" action="{{ route('logout') }}" class="d-inline">
                     @csrf
                     <button type="submit" class="btn btn-sm btn-outline-secondary">Đăng xuất</button>
