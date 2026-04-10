@@ -14,10 +14,11 @@ class UpdateHDDichVuRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'SoLuong'   => 'nullable|integer',
-            'TongTien'  => 'nullable|numeric',
-            'TrangThai' => 'required|boolean',
-            'ThanhToan' => 'required|boolean',
+            'SoLuong'    => 'nullable|integer|min:1',
+            'NgaySuDung' => 'nullable|date',
+            'TongTien'   => 'nullable|numeric',
+            'TrangThai'  => 'required|boolean',
+            'ThanhToan'  => 'required|boolean',
         ];
     }
 }

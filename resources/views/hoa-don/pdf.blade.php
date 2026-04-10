@@ -202,6 +202,7 @@
                         <th>Mã DV</th>
                         <th>Tên dịch vụ</th>
                         <th>Số lượng</th>
+                        <th>Ngày sử dụng</th>
                         <th class="text-end">Tổng tiền</th>
                     </tr>
                 </thead>
@@ -211,6 +212,7 @@
                             <td>{{ $item->MaDV }}</td>
                             <td>{{ $item->dichVu->TenDV ?? '-' }}</td>
                             <td>{{ $item->SoLuong }}</td>
+                            <td>{{ $formatDate($item->NgaySuDung) }}</td>
                             <td class="text-end">{{ number_format((float) $item->TongTien, 0, ',', '.') }} VND</td>
                         </tr>
                     @endforeach

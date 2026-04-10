@@ -116,6 +116,7 @@
                                             <th>Mã DV</th>
                                             <th>Tên dịch vụ</th>
                                             <th>Số lượng</th>
+                                            <th>Ngày sử dụng</th>
                                             <th>Trạng thái</th>
                                             <th>Thanh toán</th>
                                             <th class="text-end">Tổng tiền</th>
@@ -127,6 +128,7 @@
                                                 <td>{{ $item->MaDV }}</td>
                                                 <td>{{ $item->dichVu->TenDV ?? '-' }}</td>
                                                 <td>{{ $item->SoLuong }}</td>
+                                                <td>{{ optional($item->NgaySuDung)->format('d/m/Y') ?? '-' }}</td>
                                                 <td>{{ (int) $item->TrangThai === 1 ? 'Hoạt động' : 'Vô hiệu' }}</td>
                                                 <td>{{ (int) $item->ThanhToan === 1 ? 'Đã thanh toán' : 'Chưa thanh toán' }}</td>
                                                 <td class="text-end">{{ number_format((float) $item->TongTien, 0, ',', '.') }} VND</td>

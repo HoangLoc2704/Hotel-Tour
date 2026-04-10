@@ -5,6 +5,7 @@
                 <th>Mã HD</th>
                 <th>Mã DV</th>
                 <th>Số lượng</th>
+                <th>Ngày sử dụng</th>
                 <th>Tổng tiền</th>
                 <th>Trạng thái</th>
                 <th>Thanh toán</th>
@@ -17,6 +18,7 @@
                 <td>{{ $hdv->MaHD }}</td>
                 <td>{{ $hdv->MaDV }}</td>
                 <td>{{ $hdv->SoLuong }}</td>
+                <td>{{ optional($hdv->NgaySuDung)->format('d/m/Y') ?? '-' }}</td>
                 <td>{{ number_format($hdv->TongTien, 2) }}</td>
                 <td>{{ $hdv->TrangThai ? 'Hoạt động' : 'Vô hiệu' }}</td>
                 <td>{{ $hdv->ThanhToan ? 'Đã thanh toán' : 'Chưa thanh toán' }}</td>
@@ -32,7 +34,7 @@
             </tr>
             @empty
             <tr>
-                <td colspan="7" class="text-center">Không có dữ liệu</td>
+                <td colspan="8" class="text-center">Không có dữ liệu</td>
             </tr>
             @endforelse
         </tbody>

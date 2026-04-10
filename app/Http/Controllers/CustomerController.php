@@ -1121,6 +1121,7 @@ class CustomerController extends Controller
                         'MaHD' => $hoaDon->MaHD,
                         'MaDV' => $dichVu->MaDV,
                         'SoLuong' => $soLuong,
+                        'NgaySuDung' => $payload['ngay_su_dung'] ?? null,
                         'TongTien' => ((float) ($dichVu->GiaDV ?? 0)) * $soLuong,
                         'TrangThai' => 1,
                         'ThanhToan' => $paymentValue,

@@ -11,12 +11,13 @@ class HDDichVu extends Model
     protected $primaryKey = null;
     public $incrementing = false;
 
-    protected $fillable = ['MaHD', 'MaDV', 'SoLuong', 'TongTien', 'TrangThai', 'ThanhToan'];
+    protected $fillable = ['MaHD', 'MaDV', 'SoLuong', 'NgaySuDung', 'TongTien', 'TrangThai', 'ThanhToan'];
 
     protected $casts = [
         'MaHD' => 'integer',
         'MaDV' => 'integer',
         'SoLuong' => 'integer',
+        'NgaySuDung' => 'date:Y-m-d',
         'TongTien' => 'float',
         'TrangThai' => 'boolean',
         'ThanhToan' => 'boolean',

@@ -7,19 +7,9 @@ use App\Models\HuongDanVien;
 use App\Models\LichKhoiHanh;
 use App\Models\Tour;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 
 class LichKhoiHanhController extends Controller
 {
-    private function getSelectOptions(): array
-    {
-        return Cache::remember('lkh_select_options', now()->addMinutes(5), function () {
-            return [
-                'tours' => Tour::select('MaTour', 'TenTour')->get(),
-                'huongDanViens' => HuongDanVien::select('MaHDV', 'TenHDV')->get(),
-            ];
-        });
-    }
 
     public function index(Request $request)
     {
@@ -52,7 +42,17 @@ class LichKhoiHanhController extends Controller
 
     public function create()
     {
-        return view('lich-khoi-hanh.create', $this->getSelectOptions());
+        $tours = Tour::query()
+            ->select(['MaTour', 'TenTour'])
+            ->orderBy('TenTour')
+            ->get();
+
+        $huongDanViens = HuongDanVien::query()
+            ->select(['MaHDV', 'TenHDV'])
+            ->orderBy('TenHDV')
+            ->get();
+
+        return view('lich-khoi-hanh.create', compact('tours', 'huongDanViens'));
     }
 
     public function store(LichKhoiHanhRequest $request)
@@ -82,10 +82,18 @@ class LichKhoiHanhController extends Controller
     public function edit($id)
     {
         $lichKhoiHanh = LichKhoiHanh::findOrFail($id);
-        return view('lich-khoi-hanh.edit', array_merge(
-            ['lichKhoiHanh' => $lichKhoiHanh],
-            $this->getSelectOptions()
-        ));
+
+        $tours = Tour::query()
+            ->select(['MaTour', 'TenTour'])
+            ->orderBy('TenTour')
+            ->get();
+
+        $huongDanViens = HuongDanVien::query()
+            ->select(['MaHDV', 'TenHDV'])
+            ->orderBy('TenHDV')
+            ->get();
+
+        return view('lich-khoi-hanh.edit', compact('lichKhoiHanh', 'tours', 'huongDanViens'));
     }
 
     public function update(LichKhoiHanhRequest $request, $id)

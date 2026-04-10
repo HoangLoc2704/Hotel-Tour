@@ -132,6 +132,7 @@ CREATE TABLE tbl_HuongDanVien(
 		MaHD INT NOT NULL,
 		MaDV INT NOT NULL,
 		SoLuong INT,
+		NgaySuDung Date,
 		TongTien DOUBLE,
 		TrangThai BOOLEAN DEFAULT 1,
 		ThanhToan BOOLEAN DEFAULT 0,

@@ -14,12 +14,13 @@ class StoreHDDichVuRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'MaHD'      => 'required|exists:tbl_HoaDon,MaHD',
-            'MaDV'      => 'required|exists:tbl_DichVu,MaDV',
-            'SoLuong'   => 'nullable|integer',
-            'TongTien'  => 'nullable|numeric',
-            'TrangThai' => 'required|boolean',
-            'ThanhToan' => 'required|boolean',
+            'MaHD'       => 'required|exists:tbl_HoaDon,MaHD',
+            'MaDV'       => 'required|exists:tbl_DichVu,MaDV',
+            'SoLuong'    => 'nullable|integer|min:1',
+            'NgaySuDung' => 'nullable|date',
+            'TongTien'   => 'nullable|numeric',
+            'TrangThai'  => 'required|boolean',
+            'ThanhToan'  => 'required|boolean',
         ];
     }
 }

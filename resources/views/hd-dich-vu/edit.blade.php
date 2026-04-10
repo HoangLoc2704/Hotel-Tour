@@ -35,7 +35,11 @@
             </div>
             <div class="mb-3">
                 <label class="form-label">Số lượng*</label>
-                <input type="number" name="SoLuong" class="form-control" value="{{ old('SoLuong', $hdDichVu->SoLuong) }}" required>
+                <input type="number" name="SoLuong" class="form-control" value="{{ old('SoLuong', $hdDichVu->SoLuong) }}" min="1" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Ngày sử dụng</label>
+                <input type="date" name="NgaySuDung" class="form-control" value="{{ old('NgaySuDung', optional($hdDichVu->NgaySuDung)->format('Y-m-d')) }}">
             </div>
             <div class="mb-3">
                 <label class="form-label">Tổng tiền</label>

@@ -27,6 +27,10 @@
                 <td>{{ $hdDichVu->SoLuong }}</td>
             </tr>
             <tr>
+                <th>Ngày sử dụng:</th>
+                <td>{{ optional($hdDichVu->NgaySuDung)->format('d/m/Y') ?? '-' }}</td>
+            </tr>
+            <tr>
                 <th>Tổng tiền:</th>
                 <td>{{ number_format($hdDichVu->TongTien, 2) }}</td>
             </tr>
