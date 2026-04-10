@@ -854,69 +854,80 @@ class CustomerController extends Controller
         ]);
     }
 
-    private function resolveCheckoutCustomerId(array $validated): string
+    private function resolveCheckoutCustomer(array $validated): array
     {
         $this->storeGuestCheckoutProfile($validated);
 
         $customerId = Session::get('customer_user_id');
         if (!empty($customerId)) {
-            return (string) $customerId;
+            return [
+                'customer_id' => (string) $customerId,
+                'is_authenticated' => true,
+                'was_created' => false,
+            ];
         }
 
         $hoTen = trim((string) ($validated['ho_ten'] ?? ''));
         $soDienThoai = trim((string) ($validated['so_dien_thoai'] ?? ''));
-        $email = trim((string) ($validated['email'] ?? ''));
+        $email = Str::lower(trim((string) ($validated['email'] ?? '')));
 
-        $khachHang = KhachHang::query()
+        $emailCustomer = KhachHang::query()
             ->where('Email', $email)
-            ->orWhere('SDT', $soDienThoai)
             ->first();
+
+        $phoneCustomer = KhachHang::query()
+            ->where('SDT', $soDienThoai)
+            ->first();
+
+        if ($emailCustomer && $phoneCustomer && (string) $emailCustomer->MaKH !== (string) $phoneCustomer->MaKH) {
+            throw ValidationException::withMessages([
+                'email' => 'Email và số điện thoại đang thuộc về hai khách hàng khác nhau. Vui lòng kiểm tra lại.',
+                'so_dien_thoai' => 'Email và số điện thoại đang thuộc về hai khách hàng khác nhau. Vui lòng kiểm tra lại.',
+            ]);
+        }
+
+        $khachHang = $emailCustomer ?: $phoneCustomer;
 
         if ($khachHang) {
             $updates = [];
 
-            if ((string) ($khachHang->TenKH ?? '') !== $hoTen) {
+            if (blank($khachHang->TenKH)) {
                 $updates['TenKH'] = $hoTen;
             }
-            if ((string) ($khachHang->SDT ?? '') !== $soDienThoai) {
+            if (blank($khachHang->SDT)) {
                 $updates['SDT'] = $soDienThoai;
             }
-            if ((string) ($khachHang->Email ?? '') !== $email) {
+            if (blank($khachHang->Email)) {
                 $updates['Email'] = $email;
             }
-            if (empty($khachHang->MatKhau)) {
-                $updates['MatKhau'] = Hash::make('123456');
-            }
-            if ((int) ($khachHang->TrangThai ?? 1) === 0) {
-                $updates['TrangThai'] = 1;
+            if (blank($khachHang->MatKhau)) {
+                $updates['MatKhau'] = Hash::make(Str::random(32));
             }
 
             if (!empty($updates)) {
                 $khachHang->update($updates);
             }
 
-            Session::put('customer_user_id', $khachHang->MaKH);
-            Session::put('customer_user_name', $khachHang->TenKH);
-            Session::put('customer_user_phone', $khachHang->SDT);
-            Session::put('customer_user_email', $khachHang->Email);
-
-            return (string) $khachHang->MaKH;
+            return [
+                'customer_id' => (string) $khachHang->MaKH,
+                'is_authenticated' => false,
+                'was_created' => false,
+            ];
         }
 
         $khachHang = KhachHang::query()->create([
             'TenKH' => $hoTen,
             'SDT' => $soDienThoai,
             'Email' => $email,
-            'MatKhau' => Hash::make('123456'),
-            'TrangThai' => 1,
+            'MatKhau' => Hash::make(Str::random(32)),
+            'TrangThai' => 0,
         ]);
 
-        Session::put('customer_user_id', $khachHang->MaKH);
-        Session::put('customer_user_name', $khachHang->TenKH);
-        Session::put('customer_user_phone', $khachHang->SDT);
-        Session::put('customer_user_email', $khachHang->Email);
-
-        return (string) $khachHang->MaKH;
+        return [
+            'customer_id' => (string) $khachHang->MaKH,
+            'is_authenticated' => false,
+            'was_created' => true,
+        ];
     }
 
     private function buildBookingItem(array $validated): array
@@ -1209,7 +1220,9 @@ class CustomerController extends Controller
             'payment_transfer_note' => 'nullable|string|max:200',
         ]);
 
-        $customerId = $this->resolveCheckoutCustomerId($validated);
+        $checkoutCustomer = $this->resolveCheckoutCustomer($validated);
+        $customerId = (string) ($checkoutCustomer['customer_id'] ?? '');
+        $isAuthenticatedCustomer = (bool) ($checkoutCustomer['is_authenticated'] ?? false);
 
         if ($validated['payment_method'] === 'online') {
             $isPaid = (
@@ -1251,9 +1264,15 @@ class CustomerController extends Controller
                 ? 'Thanh toán giỏ hàng thành công.'
                 : 'Đã lưu hóa đơn giỏ hàng ở trạng thái chưa thanh toán để thanh toán tại quầy.';
 
+            if ($isAuthenticatedCustomer) {
+                return redirect()
+                    ->route('customer.invoices.show', $hoaDon->MaHD)
+                    ->with('success', $message);
+            }
+
             return redirect()
-                ->route('customer.invoices.show', $hoaDon->MaHD)
-                ->with('success', $message);
+                ->route('customer.cart')
+                ->with('success', $message . ' Mã hóa đơn của bạn là #' . $hoaDon->MaHD . '.');
         } catch (ValidationException $e) {
             return redirect()->route('customer.cart')->withErrors($e->errors());
         } catch (\Throwable $e) {
@@ -1328,7 +1347,9 @@ class CustomerController extends Controller
                     ->with('success', $message);
             }
 
-            $customerId = $this->resolveCheckoutCustomerId($validated);
+            $checkoutCustomer = $this->resolveCheckoutCustomer($validated);
+            $customerId = (string) ($checkoutCustomer['customer_id'] ?? '');
+            $isAuthenticatedCustomer = (bool) ($checkoutCustomer['is_authenticated'] ?? false);
 
             if ($validated['payment_method'] === 'online') {
                 $isPaid = (
@@ -1351,9 +1372,15 @@ class CustomerController extends Controller
                 ? 'Đặt dịch vụ thành công và hệ thống đã ghi nhận thanh toán online.'
                 : 'Đặt dịch vụ thành công. Hóa đơn hiện đang ở trạng thái chưa thanh toán để xử lý tại quầy.';
 
+            if ($isAuthenticatedCustomer) {
+                return redirect()
+                    ->route('customer.invoices.show', $hoaDon->MaHD)
+                    ->with('success', $message);
+            }
+
             return redirect()
-                ->route('customer.invoices.show', $hoaDon->MaHD)
-                ->with('success', $message);
+                ->route('customer.booking')
+                ->with('success', $message . ' Mã hóa đơn của bạn là #' . $hoaDon->MaHD . '.');
         } catch (ValidationException $e) {
             throw $e;
         } catch (\Throwable $e) {
