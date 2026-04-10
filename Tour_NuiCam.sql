@@ -72,7 +72,7 @@ CREATE TABLE tbl_HuongDanVien(
 		NgayTao Date,
 		ThanhTien Double,
 		TrangThai BOOLEAN default 0,
-		ThanhToan BOOLEAN default 0
+		ThanhToan BOOLEAN default 0,
 		FOREIGN KEY (MaKH) REFERENCES tbl_KhachHang(MaKH)
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
