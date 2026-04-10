@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Validation\Rule;
 
 class AuthController extends Controller
 {
@@ -146,6 +147,105 @@ class AuthController extends Controller
         }
 
         return view('admin', compact('user', 'counts', 'revenueReport', 'filters'));
+    }
+
+    public function profile()
+    {
+        if (!Session::has('user_id')) {
+            return redirect()->route('login');
+        }
+
+        $nhanVien = NhanVien::with('chucVu')->find(Session::get('user_id'));
+
+        if (!$nhanVien) {
+            Session::flush();
+
+            return redirect()
+                ->route('login')
+                ->withErrors(['email' => 'Không tìm thấy thông tin tài khoản. Vui lòng đăng nhập lại.']);
+        }
+
+        return view('admin.profile', [
+            'nhanVien' => $nhanVien,
+            'user' => [
+                'name' => $nhanVien->TenNV,
+                'email' => $nhanVien->Email,
+                'role' => $nhanVien->MaCV,
+                'role_name' => $nhanVien->chucVu->TenCV ?? Session::get('user_role_name', 'Chưa cập nhật'),
+            ],
+        ]);
+    }
+
+    public function updateProfile(Request $request)
+    {
+        if (!Session::has('user_id')) {
+            return redirect()->route('login');
+        }
+
+        $nhanVien = NhanVien::with('chucVu')->find(Session::get('user_id'));
+
+        if (!$nhanVien) {
+            Session::flush();
+
+            return redirect()
+                ->route('login')
+                ->withErrors(['email' => 'Không tìm thấy thông tin tài khoản. Vui lòng đăng nhập lại.']);
+        }
+
+        $validated = $request->validate([
+            'TenNV' => 'required|string|max:50',
+            'GioiTinh' => 'required|in:0,1',
+            'NgaySinh' => 'nullable|date',
+            'DiaChi' => 'nullable|string|max:255',
+            'SDT' => 'required|string|max:20',
+            'TenTK' => [
+                'required',
+                'string',
+                'max:100',
+                Rule::unique('tbl_NhanVien', 'TenTK')->ignore($nhanVien->MaNV, 'MaNV'),
+            ],
+            'Email' => [
+                'required',
+                'email',
+                'max:100',
+                Rule::unique('tbl_NhanVien', 'Email')->ignore($nhanVien->MaNV, 'MaNV'),
+            ],
+            'current_password' => 'nullable|string|required_with:MatKhau',
+            'MatKhau' => 'nullable|string|min:6|confirmed',
+        ], [
+            'current_password.required_with' => 'Vui lòng nhập mật khẩu hiện tại để đổi mật khẩu.',
+            'MatKhau.confirmed' => 'Xác nhận mật khẩu mới không khớp.',
+        ]);
+
+        if (!empty($validated['MatKhau']) && !Hash::check((string) $validated['current_password'], (string) $nhanVien->MatKhau)) {
+            return back()
+                ->withErrors(['current_password' => 'Mật khẩu hiện tại không đúng.'])
+                ->withInput();
+        }
+
+        $nhanVien->update([
+            'TenNV' => trim((string) $validated['TenNV']),
+            'GioiTinh' => (int) $validated['GioiTinh'],
+            'NgaySinh' => $validated['NgaySinh'] ?: null,
+            'DiaChi' => trim((string) ($validated['DiaChi'] ?? '')),
+            'SDT' => trim((string) $validated['SDT']),
+            'TenTK' => trim((string) $validated['TenTK']),
+            'Email' => strtolower(trim((string) $validated['Email'])),
+            'MatKhau' => !empty($validated['MatKhau'])
+                ? Hash::make((string) $validated['MatKhau'])
+                : $nhanVien->MatKhau,
+        ]);
+
+        Session::put('user_name', $nhanVien->TenNV);
+        Session::put('user_email', $nhanVien->Email);
+        Session::put('user_role', $nhanVien->MaCV);
+        Session::put('user_role_name', $nhanVien->chucVu->TenCV ?? Session::get('user_role_name', ''));
+
+        return redirect()
+            ->route('admin.profile')
+            ->with('success', !empty($validated['MatKhau'])
+                ? 'Cập nhật thông tin cá nhân và đổi mật khẩu thành công.'
+                : 'Cập nhật thông tin cá nhân thành công.');
     }
 
     public function testDb()

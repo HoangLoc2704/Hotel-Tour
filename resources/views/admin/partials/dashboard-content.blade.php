@@ -118,6 +118,7 @@
                 <p><strong>Tên:</strong> {{ $user['name'] }}</p>
                 <p><strong>Email:</strong> {{ $user['email'] }}</p>
                 <p><strong>Vai trò:</strong> {{ $user['role'] == 1 ? 'Quản lý' : 'Nhân viên' }}</p>
+                <a href="{{ route('admin.profile') }}" class="btn btn-sm btn-outline-primary">Xem thông tin cá nhân</a>
             </div>
         </div>
     </div>

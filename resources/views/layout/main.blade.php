@@ -50,6 +50,10 @@
                     <a href="{{ route('admin') }}">Bảng điều khiển</a>
                 </li>
 
+                <li class="sidebar-item">
+                    <a href="{{ route('admin.profile') }}">Thông tin cá nhân</a>
+                </li>
+
                 @if ($isManager)
                 <li class="sidebar-item">
                     <a href="{{ route('chuc-vu.index') }}">Bảng chức vụ</a>
@@ -136,8 +140,9 @@
         <div class="main">
 
             <!-- Navbar -->
-            <nav class="navbar d-flex justify-content-end">
-                <span class="me-3">Xin chào, {{ session('user_name') ?? 'Admin' }}</span>
+            <nav class="navbar d-flex justify-content-end align-items-center gap-2 flex-wrap">
+                <span class="me-2">Xin chào, {{ session('user_name') ?? 'Admin' }}</span>
+                <a href="{{ route('admin.profile') }}" class="btn btn-sm btn-outline-primary">Thông tin cá nhân</a>
                 <form method="POST" action="{{ route('logout') }}" class="d-inline">
                     @csrf
                     <button type="submit" class="btn btn-sm btn-outline-secondary">Đăng xuất</button>

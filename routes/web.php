@@ -64,6 +64,8 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 // Protected Routes (cần đăng nhập)
 Route::middleware(['auth.check'])->group(function () {
     Route::get('/admin', [AuthController::class, 'showAdmin'])->name('admin');
+    Route::get('/admin/profile', [AuthController::class, 'profile'])->name('admin.profile');
+    Route::patch('/admin/profile', [AuthController::class, 'updateProfile'])->name('admin.profile.update');
 
     // Quản lý toàn bộ chức năng.
     Route::middleware(['role.check:quan-ly'])->group(function () {
