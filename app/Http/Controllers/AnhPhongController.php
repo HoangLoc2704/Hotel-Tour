@@ -50,9 +50,9 @@ class AnhPhongController extends Controller
     {
         $validated = $request->validate([
             'MaLoai' => 'required|exists:tbl_LoaiPhong,MaLoai',
-            'image_file' => 'required_without:HinhAnh|nullable|image|max:4096',
+            'image_file' => 'required_without:HinhAnh|nullable|image|max:' . $this->imageUploadMaxKb(),
             'HinhAnh' => 'nullable|string|max:255',
-        ]);
+        ], $this->imageUploadValidationMessages());
 
         $loaiPhong = LoaiPhong::findOrFail($validated['MaLoai']);
 
@@ -97,9 +97,9 @@ class AnhPhongController extends Controller
         $anhPhong = AnhPhong::findOrFail($id);
         $validated = $request->validate([
             'MaLoai' => 'required|exists:tbl_LoaiPhong,MaLoai',
-            'image_file' => 'nullable|image|max:4096',
+            'image_file' => 'nullable|image|max:' . $this->imageUploadMaxKb(),
             'HinhAnh' => 'nullable|string|max:255',
-        ]);
+        ], $this->imageUploadValidationMessages());
 
         $loaiPhong = LoaiPhong::findOrFail($validated['MaLoai']);
 

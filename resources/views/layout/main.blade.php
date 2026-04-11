@@ -1,5 +1,12 @@
+@php
+$maxImageKb = max((int) config('uploads.image_max_kb', 900), 1);
+$maxImageBytes = $maxImageKb * 1024;
+$maxImageLabel = $maxImageKb >= 1024
+    ? rtrim(rtrim(number_format($maxImageKb / 1024, 2, '.', ''), '0'), '.') . ' MB'
+    : $maxImageKb . ' KB';
+@endphp
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="vi" data-image-max-bytes="{{ $maxImageBytes }}" data-image-max-label="{{ $maxImageLabel }}">
 
 <head>
     <meta charset="utf-8">

@@ -240,6 +240,80 @@ document.addEventListener('click', (event) => {
     loadAjaxList(container, url, true);
 });
 
+function getImageUploadLimit() {
+    const root = document.documentElement;
+    const fallbackBytes = 900 * 1024;
+    const parsedBytes = Number(root.dataset.imageMaxBytes || fallbackBytes);
+
+    return {
+        bytes: Number.isFinite(parsedBytes) && parsedBytes > 0 ? parsedBytes : fallbackBytes,
+        label: root.dataset.imageMaxLabel || '1 MB',
+    };
+}
+
+function getFileValidationFeedback(input) {
+    let feedback = input.parentElement?.querySelector('.js-file-size-feedback');
+
+    if (!feedback) {
+        feedback = document.createElement('div');
+        feedback.className = 'invalid-feedback js-file-size-feedback';
+        input.insertAdjacentElement('afterend', feedback);
+    }
+
+    return feedback;
+}
+
+function clearFileValidation(input) {
+    input.classList.remove('is-invalid');
+
+    const feedback = input.parentElement?.querySelector('.js-file-size-feedback');
+    if (feedback) {
+        feedback.remove();
+    }
+}
+
+function validateImageFileInput(input) {
+    const file = input.files?.[0];
+    if (!file) {
+        clearFileValidation(input);
+        return true;
+    }
+
+    const { bytes, label } = getImageUploadLimit();
+    if (file.size <= bytes) {
+        clearFileValidation(input);
+        return true;
+    }
+
+    input.value = '';
+    input.classList.add('is-invalid');
+    getFileValidationFeedback(input).textContent = `Ảnh vượt quá ${label}. Vui lòng nén ảnh hoặc chọn file nhỏ hơn.`;
+
+    return false;
+}
+
+document.addEventListener('change', (event) => {
+    const input = event.target.closest('input[type="file"][name="image_file"]');
+    if (!input) {
+        return;
+    }
+
+    validateImageFileInput(input);
+});
+
+document.addEventListener('submit', (event) => {
+    const form = event.target;
+    const fileInputs = form.querySelectorAll('input[type="file"][name="image_file"]');
+
+    for (const input of fileInputs) {
+        if (!validateImageFileInput(input)) {
+            event.preventDefault();
+            input.focus();
+            break;
+        }
+    }
+});
+
 document.addEventListener('DOMContentLoaded', () => {
     initRoomDatePickers(document);
 });

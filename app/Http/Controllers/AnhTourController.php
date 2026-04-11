@@ -49,9 +49,9 @@ class AnhTourController extends Controller
     {
         $validated = $request->validate([
             'MaTour' => 'required|exists:tbl_TOUR,MaTour',
-            'image_file' => 'required_without:HinhAnh|nullable|image|max:4096',
+            'image_file' => 'required_without:HinhAnh|nullable|image|max:' . $this->imageUploadMaxKb(),
             'HinhAnh' => 'nullable|string|max:255',
-        ]);
+        ], $this->imageUploadValidationMessages());
 
         $tour = Tour::findOrFail($validated['MaTour']);
 
@@ -96,9 +96,9 @@ class AnhTourController extends Controller
         $anhTour = AnhTour::findOrFail($id);
         $validated = $request->validate([
             'MaTour' => 'required|exists:tbl_TOUR,MaTour',
-            'image_file' => 'nullable|image|max:4096',
+            'image_file' => 'nullable|image|max:' . $this->imageUploadMaxKb(),
             'HinhAnh' => 'nullable|string|max:255',
-        ]);
+        ], $this->imageUploadValidationMessages());
 
         $tour = Tour::findOrFail($validated['MaTour']);
 

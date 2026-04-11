@@ -18,6 +18,36 @@ class Controller extends BaseController
         return $request->expectsJson() || $request->wantsJson() || $request->is('api/*');
     }
 
+    protected function imageUploadMaxKb(): int
+    {
+        return max((int) config('uploads.image_max_kb', 900), 1);
+    }
+
+    protected function imageUploadLimitLabel(): string
+    {
+        $maxKb = $this->imageUploadMaxKb();
+
+        if ($maxKb >= 1024) {
+            $maxMb = $maxKb / 1024;
+            $formatted = rtrim(rtrim(number_format($maxMb, 2, '.', ''), '0'), '.');
+
+            return $formatted . ' MB';
+        }
+
+        return $maxKb . ' KB';
+    }
+
+    protected function imageUploadValidationMessages(): array
+    {
+        $label = $this->imageUploadLimitLabel();
+
+        return [
+            'image_file.image' => 'Vui lòng chọn đúng tệp hình ảnh.',
+            'image_file.max' => 'Ảnh tải lên không được vượt quá ' . $label . '.',
+            'image_file.required_without' => 'Vui lòng chọn ảnh để tải lên hoặc nhập tên ảnh.',
+        ];
+    }
+
     protected function jsonSuccess(mixed $data = null, ?string $message = null, int $status = 200, array $meta = []): JsonResponse
     {
         $payload = [
