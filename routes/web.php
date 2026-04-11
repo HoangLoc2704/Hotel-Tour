@@ -30,9 +30,15 @@ Route::post('/customer/cart/checkout', [CustomerController::class, 'checkoutCart
 Route::get('/customer/login', [CustomerController::class, 'login'])->name('customer.login');
 Route::get('/customer/register', [CustomerController::class, 'register'])->name('customer.register');
 Route::get('/customer/register/otp', [CustomerController::class, 'registerOtp'])->name('customer.register.otp');
+Route::get('/customer/forgot-password', [CustomerController::class, 'forgotPassword'])->name('customer.password.request');
+Route::get('/customer/forgot-password/otp', [CustomerController::class, 'forgotPasswordOtp'])->name('customer.password.otp');
+Route::get('/customer/forgot-password/reset', [CustomerController::class, 'resetPassword'])->name('customer.password.reset');
 Route::post('/customer/login', [CustomerController::class, 'submitLogin'])->name('customer.login.submit');
 Route::post('/customer/register/send-otp', [CustomerController::class, 'sendRegisterOtp'])->name('customer.register.send-otp');
 Route::post('/customer/register', [CustomerController::class, 'submitRegister'])->name('customer.register.submit');
+Route::post('/customer/forgot-password/send-otp', [CustomerController::class, 'sendForgotPasswordOtp'])->name('customer.password.email');
+Route::post('/customer/forgot-password/verify-otp', [CustomerController::class, 'verifyForgotPasswordOtp'])->name('customer.password.verify-otp');
+Route::post('/customer/forgot-password/reset', [CustomerController::class, 'updateForgotPassword'])->name('customer.password.update');
 Route::post('/customer/logout', [CustomerController::class, 'logout'])->name('customer.logout');
 Route::patch('/customer/profile', [CustomerController::class, 'updateProfile'])->name('customer.profile.update');
 Route::get('/customer/invoices', [CustomerController::class, 'invoices'])->name('customer.invoices');

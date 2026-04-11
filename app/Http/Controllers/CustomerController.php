@@ -485,6 +485,180 @@ class CustomerController extends Controller
         return view('customer.register');
     }
 
+    public function forgotPassword(): View
+    {
+        return view('customer.forgetpassword');
+    }
+
+    public function forgotPasswordOtp(): View|RedirectResponse
+    {
+        $resetPayload = Session::get('customer_password_reset_payload');
+
+        if (!is_array($resetPayload) || empty($resetPayload['email'])) {
+            return redirect()
+                ->route('customer.password.request')
+                ->with('error', 'Vui lòng nhập email tài khoản trước khi xác thực OTP.');
+        }
+
+        $otpExpiresAt = Session::get('customer_password_reset_otp_expires_at');
+
+        return view('customer.forgot-password-otp', compact('resetPayload', 'otpExpiresAt'));
+    }
+
+    public function sendForgotPasswordOtp(Request $request): RedirectResponse
+    {
+        $isResend = $request->boolean('resend');
+
+        if ($isResend) {
+            $payload = Session::get('customer_password_reset_payload');
+
+            if (!is_array($payload) || empty($payload['email']) || empty($payload['customer_id'])) {
+                return redirect()
+                    ->route('customer.password.request')
+                    ->with('error', 'Phiên quên mật khẩu đã hết hạn. Vui lòng nhập lại email.');
+            }
+        } else {
+            $validated = $request->validate([
+                'email' => 'required|email|max:100',
+            ]);
+
+            $email = Str::lower(trim((string) $validated['email']));
+            $khachHang = KhachHang::query()
+                ->where('Email', $email)
+                ->where('TrangThai', 1)
+                ->first();
+
+            if (!$khachHang) {
+                throw ValidationException::withMessages([
+                    'email' => 'Không tìm thấy tài khoản khách hàng với email này.',
+                ]);
+            }
+
+            $payload = [
+                'customer_id' => $khachHang->MaKH,
+                'customer_name' => $khachHang->TenKH,
+                'email' => $email,
+            ];
+
+            Session::put('customer_password_reset_payload', $payload);
+            Session::forget('customer_password_reset_verified');
+        }
+
+        $otp = (string) random_int(100000, 999999);
+        Session::put('customer_password_reset_otp_hash', Hash::make($otp));
+        Session::put('customer_password_reset_otp_expires_at', now()->addMinutes(5)->timestamp);
+
+        try {
+            $this->sendForgotPasswordOtpEmail((string) $payload['email'], $otp);
+        } catch (\Exception $e) {
+            return redirect()
+                ->route($isResend ? 'customer.password.otp' : 'customer.password.request')
+                ->withErrors([
+                    'otp' => 'Không thể gửi mã OTP lúc này. Vui lòng thử lại sau.',
+                ]);
+        }
+
+        return redirect()
+            ->route('customer.password.otp')
+            ->with('success', $isResend
+                ? 'Đã gửi lại mã OTP về email của bạn.'
+                : 'Đã gửi mã OTP xác thực về email của bạn. Vui lòng nhập OTP để tiếp tục.');
+    }
+
+    public function verifyForgotPasswordOtp(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'otp' => 'required|digits:6',
+        ]);
+
+        $otpHash = Session::get('customer_password_reset_otp_hash');
+        $otpExpiresAt = (int) Session::get('customer_password_reset_otp_expires_at', 0);
+        $payload = Session::get('customer_password_reset_payload');
+
+        if (empty($otpHash) || !is_array($payload) || now()->timestamp > $otpExpiresAt) {
+            $this->clearForgotPasswordSession();
+
+            return redirect()
+                ->route('customer.password.request')
+                ->withErrors([
+                    'otp' => 'Mã OTP đã hết hạn hoặc không tồn tại. Vui lòng nhập lại email để tiếp tục.',
+                ]);
+        }
+
+        if (!Hash::check((string) $validated['otp'], (string) $otpHash)) {
+            return redirect()
+                ->route('customer.password.otp')
+                ->withErrors([
+                    'otp' => 'Mã OTP không đúng. Vui lòng kiểm tra lại.',
+                ])
+                ->withInput();
+        }
+
+        Session::put('customer_password_reset_verified', true);
+
+        return redirect()
+            ->route('customer.password.reset')
+            ->with('success', 'Xác thực OTP thành công. Vui lòng nhập mật khẩu mới.');
+    }
+
+    public function resetPassword(): View|RedirectResponse
+    {
+        $resetPayload = Session::get('customer_password_reset_payload');
+        $isVerified = Session::get('customer_password_reset_verified', false);
+
+        if (!is_array($resetPayload) || empty($resetPayload['email'])) {
+            return redirect()
+                ->route('customer.password.request')
+                ->with('error', 'Phiên đặt lại mật khẩu không hợp lệ. Vui lòng thử lại.');
+        }
+
+        if (!$isVerified) {
+            return redirect()
+                ->route('customer.password.otp')
+                ->with('error', 'Vui lòng xác thực OTP trước khi đổi mật khẩu.');
+        }
+
+        return view('customer.reset-password', compact('resetPayload'));
+    }
+
+    public function updateForgotPassword(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'mat_khau' => 'required|string|min:6|confirmed',
+        ]);
+
+        $payload = Session::get('customer_password_reset_payload');
+        $isVerified = Session::get('customer_password_reset_verified', false);
+
+        if (!is_array($payload) || empty($payload['customer_id']) || !$isVerified) {
+            $this->clearForgotPasswordSession();
+
+            return redirect()
+                ->route('customer.password.request')
+                ->with('error', 'Phiên đặt lại mật khẩu đã hết hạn. Vui lòng thực hiện lại từ đầu.');
+        }
+
+        $khachHang = KhachHang::query()->find($payload['customer_id']);
+
+        if (!$khachHang) {
+            $this->clearForgotPasswordSession();
+
+            return redirect()
+                ->route('customer.password.request')
+                ->with('error', 'Không tìm thấy tài khoản khách hàng. Vui lòng thử lại.');
+        }
+
+        $khachHang->update([
+            'MatKhau' => Hash::make($validated['mat_khau']),
+        ]);
+
+        $this->clearForgotPasswordSession();
+
+        return redirect()
+            ->route('customer.login')
+            ->with('success', 'Đổi mật khẩu thành công. Vui lòng đăng nhập lại bằng mật khẩu mới.');
+    }
+
     public function registerOtp(): View|RedirectResponse
     {
         $pendingRegistration = Session::get('customer_register_payload');
@@ -659,6 +833,16 @@ class CustomerController extends Controller
         return [$emailCustomer ?: $phoneCustomer, $errors];
     }
 
+    private function clearForgotPasswordSession(): void
+    {
+        Session::forget([
+            'customer_password_reset_payload',
+            'customer_password_reset_otp_hash',
+            'customer_password_reset_otp_expires_at',
+            'customer_password_reset_verified',
+        ]);
+    }
+
     private function sendRegisterOtpEmail(string $email, string $otp): void
     {
         $defaultMailer = (string) config('mail.default', 'log');
@@ -674,6 +858,25 @@ class CustomerController extends Controller
             function ($message) use ($email) {
                 $message->to($email)
                     ->subject('Mã OTP đăng ký tài khoản');
+            }
+        );
+    }
+
+    private function sendForgotPasswordOtpEmail(string $email, string $otp): void
+    {
+        $defaultMailer = (string) config('mail.default', 'log');
+        $smtpUsername = (string) config('mail.mailers.smtp.username', '');
+        $fromAddress = (string) config('mail.from.address', '');
+
+        if ($defaultMailer === 'log' || blank($smtpUsername) || blank($fromAddress)) {
+            throw new \RuntimeException('Hệ thống chưa được cấu hình SMTP để gửi email thật.');
+        }
+
+        Mail::raw(
+            "Mã OTP quên mật khẩu của bạn là: {$otp}. Mã có hiệu lực trong 5 phút.",
+            function ($message) use ($email) {
+                $message->to($email)
+                    ->subject('Mã OTP đặt lại mật khẩu');
             }
         );
     }
