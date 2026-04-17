@@ -125,10 +125,6 @@
             @enderror
         </div>
 
-        <div class="forgot_password">
-            <a href="#">Quên mật khẩu?</a>
-        </div>
-
         <button class="submit" type="submit">Đăng nhập</button>
 
         <div style="margin-top: 14px; text-align: center;">
