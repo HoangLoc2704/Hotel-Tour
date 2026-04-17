@@ -79,14 +79,16 @@ body {
 
 .hero-section {
     margin-bottom: 2rem;
+    position: relative;
 }
 
 .hero-slide {
     min-height: 460px;
+    position: relative;
+    overflow: hidden;
+    color: #fff;
     display: flex;
     align-items: center;
-    color: #fff;
-    position: relative;
 }
 
 .hero-slide::before {
@@ -94,11 +96,30 @@ body {
     position: absolute;
     inset: 0;
     background: linear-gradient(100deg, rgba(7, 39, 29, 0.72) 0%, rgba(7, 39, 29, 0.1) 65%);
+    z-index: 1;
+}
+
+.hero-slide-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: center;
+    display: block;
+    background-color: #f0f0f0;
+}
+
+.hero-slide-content {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    padding: 2rem 0;
 }
 
 .hero-slide .container {
     position: relative;
-    z-index: 1;
+    z-index: 2;
 }
 
 .hero-slide h1 {
@@ -127,11 +148,48 @@ body {
     background: linear-gradient(120deg, #0d523f 0%, #2d8d69 48%, #7fcf93 100%);
 }
 
+.hero-slide-default {
+    background: linear-gradient(125deg, #0f402f 0%, #1f7a55 60%, #4bc88a 100%);
+}
+
+.banner-slider {
+    width: 100%;
+    max-width: 1280px;
+    margin: 0 auto 1.75rem;
+}
+
+.banner-slider-placeholder {
+    padding: 1rem 0;
+}
+
+.banner-placeholder-box {
+    height: clamp(320px, 38vw, 540px);
+    border-radius: 22px;
+    background: linear-gradient(135deg, #0f402f 0%, #1f7a55 100%);
+}
+
+.carousel-control-prev:hover,
+.carousel-control-next:hover,
+.carousel-control-prev:focus,
+.carousel-control-next:focus {
+    opacity: 1;
+    background: transparent;
+    outline: none;
+}
+
+.carousel-control-prev-icon,
+.carousel-control-next-icon {
+    width: 40px;
+    height: 40px;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
 .section-title-wrap h2 {
     font-size: 1.95rem;
     font-weight: 800;
     margin-bottom: 0.35rem;
 }
+
 
 .section-title-wrap p {
     color: var(--ink-600);

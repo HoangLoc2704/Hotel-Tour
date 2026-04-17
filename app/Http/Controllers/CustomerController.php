@@ -30,6 +30,17 @@ class CustomerController extends Controller
 {
     public function index(): View
     {
+        $bannerPath = public_path('img/Banner');
+        $bannerImages = [];
+        if (File::exists($bannerPath)) {
+            $files = File::files($bannerPath);
+            $bannerImages = collect($files)
+                ->map(fn($file) => $file->getFilename())
+                ->sort()
+                ->values()
+                ->toArray();
+        }
+
         $dichVus = DichVu::query()
             ->select(['MaDV', 'TenDV', 'GiaDV'])
             ->where('TrangThai', 1)
@@ -50,7 +61,7 @@ class CustomerController extends Controller
             ->limit(6)
             ->get();
 
-        return view('customer.index', compact('dichVus', 'phongs', 'tours'));
+        return view('customer.index', compact('dichVus', 'phongs', 'tours', 'bannerImages'));
     }
 
     public function hotelServices(Request $request): View

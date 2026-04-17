@@ -3,61 +3,23 @@
 @section('title', 'Khách sạn - Dịch vụ cho khách hàng')
 
 @section('content')
+    {{-- Banner Section --}}
     <section class="hero-section">
-        <div id="customerHero" class="carousel slide" data-bs-ride="carousel" data-bs-interval="3500">
-            <div class="carousel-indicators">
-                <button type="button" data-bs-target="#customerHero" data-bs-slide-to="0" class="active"></button>
-                <button type="button" data-bs-target="#customerHero" data-bs-slide-to="1"></button>
-                <button type="button" data-bs-target="#customerHero" data-bs-slide-to="2"></button>
-            </div>
-
-            <div class="carousel-inner">
-                <div class="carousel-item active">
-                    <div class="hero-slide slide-one">
-                        <div class="container">
-                            <h1>Trải nghiệm nghỉ dưỡng thanh lịch giữa lòng thành phố</h1>
-                            <p>Phòng nghỉ hiện đại, dịch vụ tận tâm, đa dạng gói lựa chọn cho mọi nhu cầu.</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="carousel-item">
-                    <div class="hero-slide slide-two">
-                        <div class="container">
-                            <h1>Đặt tour, đặt phòng, đặt dịch vụ chỉ trong 1 bước</h1>
-                            <p>Từ du lịch nghỉ dưỡng đến công tác ngắn ngày, chúng tôi đều có gói tối ưu cho bạn.</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="carousel-item">
-                    <div class="hero-slide slide-three">
-                        <div class="container">
-                            <h1>Ưu đãi linh hoạt theo nhu cầu theo nhóm</h1>
-                            <p>Từ cặp đôi đến gia đình và đoàn khách, dễ dàng tùy chọn và đặt lịch nhanh chóng.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <div class="banner-slider-wrapper">
+            @include('customer.partials.banner-carousel', ['bannerImages' => $bannerImages ?? []])
         </div>
     </section>
 
     <main class="pb-5">
+        {{-- Services Section --}}
         <section class="container py-5" id="addon-services">
             <div class="section-title-wrap">
                 <h2>Dịch vụ nổi bật</h2>
                 <p>Những dịch vụ được khách hàng lựa chọn nhiều nhất trong thời gian gần đây.</p>
             </div>
-
             <div class="row g-4">
-                @forelse ($dichVus as $dichVu)
-                    <div class="col-md-6 col-lg-4">
-                        <article class="service-card h-100">
-                            <div class="service-card-icon">DV</div>
-                            <h3>{{ $dichVu->TenDV }}</h3>
-                            <p>Dịch vụ tiện ích dành cho khách lưu trú và khách tham quan trong ngày.</p>
-                            <div class="price">Giá từ {{ number_format($dichVu->GiaDV ?? 0, 0, ',', '.') }} VND</div>
-                            <a href="{{ route('customer.service-detail', $dichVu->MaDV) }}" class="detail-link">Xem chi tiết</a>
-                        </article>
-                    </div>
+                @forelse($dichVus as $item)
+                    @include('customer.partials.service-item', ['item' => $item])
                 @empty
                     <div class="col-12">
                         <div class="empty-box">Hiện tại chưa có dữ liệu dịch vụ.</div>
@@ -66,33 +28,23 @@
             </div>
         </section>
 
+        {{-- Rooms Section --}}
         <section class="container pb-5" id="hotel-services">
             <div class="section-title-wrap">
                 <h2>Phòng đề xuất</h2>
                 <p>Không gian thoải mái, đa dạng sức chứa và mức giá linh hoạt.</p>
             </div>
-
             <div class="row g-4">
-                @forelse ($phongs as $phong)
-                    <div class="col-md-6 col-lg-4">
-                        <article class="offer-card h-100">
-                            <div class="offer-image">
-                                <img
-                                    src="{{ asset($phong->roomImagePath()) }}"
-                                    alt="{{ $phong->TenLoai }}"
-                                    loading="lazy"
-                                >
-                            </div>
-                            <div class="offer-body">
-                                <div class="detail-badge mb-2">Mã loại: {{ $phong->MaLoai }}</div>
-                                <h3>{{ $phong->TenLoai }}</h3>
-                                <p>{{ (int) ($phong->SoLuongNguoi ?? 0) }} khách · Loại phòng</p>
-                                <p>{{ \Illuminate\Support\Str::limit($phong->MoTa ?: 'Phòng nghỉ thoải mái, phù hợp cho kỳ nghỉ ngắn ngày và nghỉ dưỡng gia đình.', 95) }}</p>
-                                <div class="price">{{ number_format($phong->GiaPhong ?? 0, 0, ',', '.') }} VND / đêm</div>
-                                <a href="{{ route('customer.room-detail', $phong->MaLoai) }}" class="detail-link">Xem chi tiết</a>
-                            </div>
-                        </article>
-                    </div>
+                @forelse($phongs as $item)
+                    @include('customer.partials.offer-item', [
+                        'imagePath' => $item->roomImagePath(),
+                        'badge' => 'Mã loại: ' . $item->MaLoai,
+                        'title' => $item->TenLoai,
+                        'meta' => (int)($item->SoLuongNguoi ?? 0) . ' khách · Loại phòng',
+                        'description' => \Illuminate\Support\Str::limit($item->MoTa ?: 'Phòng nghỉ thoải mái, phù hợp cho kỳ nghỉ ngắn ngày và nghỉ dưỡng gia đình.', 95),
+                        'price' => number_format($item->GiaPhong ?? 0, 0, ',', '.') . ' VND / đêm',
+                        'link' => route('customer.room-detail', $item->MaLoai),
+                    ])
                 @empty
                     <div class="col-12">
                         <div class="empty-box">Hiện tại chưa có dữ liệu phòng.</div>
@@ -101,32 +53,23 @@
             </div>
         </section>
 
+        {{-- Tours Section --}}
         <section class="container pb-5" id="tour-services">
             <div class="section-title-wrap">
                 <h2>Tour du lịch</h2>
                 <p>Gói tour đa dạng điểm đến, lịch trình gọn gàng, phù hợp nhiều đối tượng.</p>
             </div>
-
             <div class="row g-4">
-                @forelse ($tours as $tour)
-                    <div class="col-md-6 col-lg-4">
-                        <article class="offer-card h-100">
-                            <div class="offer-image">
-                                <img
-                                    src="{{ asset($tour->tourImagePath()) }}"
-                                    alt="{{ $tour->TenTour }}"
-                                    loading="lazy"
-                                >
-                            </div>
-                            <div class="offer-body">
-                                <h3>{{ $tour->TenTour }}</h3>
-                                <p>{{ $tour->DiaDiemKhoiHanh ?? 'Đang cập nhật' }} · {{ $tour->ThoiLuong }} ngày</p>
-                                <p>{{ \Illuminate\Support\Str::limit($tour->MoTa ?: 'Lịch trình gọn gàng, phù hợp cho gia đình, nhóm bạn và khách du lịch tự do.', 95) }}</p>
-                                <div class="price">Từ {{ number_format($tour->GiaTourNguoiLon ?? 0, 0, ',', '.') }} VND / người</div>
-                                <a href="{{ route('customer.tour-detail', $tour->MaTour) }}" class="detail-link">Xem chi tiết</a>
-                            </div>
-                        </article>
-                    </div>
+                @forelse($tours as $item)
+                    @include('customer.partials.offer-item', [
+                        'imagePath' => $item->tourImagePath(),
+                        'badge' => null,
+                        'title' => $item->TenTour,
+                        'meta' => ($item->DiaDiemKhoiHanh ?? 'Đang cập nhật') . ' · ' . $item->ThoiLuong . ' ngày',
+                        'description' => \Illuminate\Support\Str::limit($item->MoTa ?: 'Lịch trình gọn gàng, phù hợp cho gia đình, nhóm bạn và khách du lịch tự do.', 95),
+                        'price' => 'Từ ' . number_format($item->GiaTourNguoiLon ?? 0, 0, ',', '.') . ' VND / người',
+                        'link' => route('customer.tour-detail', $item->MaTour),
+                    ])
                 @empty
                     <div class="col-12">
                         <div class="empty-box">Hiện tại chưa có dữ liệu tour.</div>
