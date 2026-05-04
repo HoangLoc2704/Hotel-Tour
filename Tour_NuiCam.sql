@@ -1,4 +1,4 @@
-﻿
+
 
 SET NAMES utf8mb4;
 -- ================= CHUC VU =================
@@ -188,9 +188,9 @@ INSERT INTO tbl_ChucVu (TenCV) VALUES
 INSERT INTO tbl_NhanVien
 (TenNV, GioiTinh, NgaySinh, DiaChi, SDT, TenTK, MatKhau, Email, MaCV)
 VALUES
-('Nguyễn Văn A',1,'1995-05-10','An Giang','0911111111','nva','$2y$10$wG3uJX2Y6v1rYFQn8zM1F.1Z8j4z5QmYvZyQZrYw1cZk2p0JYpK9G','a@gmail.com',1),
-('Trần Thị B',0,'1998-03-15','Cần Thơ','0922222222','ttb','Ttb@123','b@gmail.com',2),
-('Lê Văn C',1,'1993-07-20','Đồng Tháp','0933333333','lvc','Lvc@123','c@gmail.com',3);
+('Nguyễn Văn A',1,'1995-05-10','An Giang','0911111111','nva','$2y$12$obUGiKARcGFyKsU9ZN.fQ.OBFylLvfaBSVZED7LOKylAveNcQILda',1),
+('Trần Thị B',0,'1998-03-15','Cần Thơ','0922222222','ttb','$2y$12$obUGiKARcGFyKsU9ZN.fQ.OBFylLvfaBSVZED7LOKylAveNcQILda','b@gmail.com',2),
+('Lê Văn C',1,'1993-07-20','Đồng Tháp','0933333333','lvc','$2y$12$obUGiKARcGFyKsU9ZN.fQ.OBFylLvfaBSVZED7LOKylAveNcQILda','c@gmail.com',3);
 
 
 -- ================= LOAI PHONG =================

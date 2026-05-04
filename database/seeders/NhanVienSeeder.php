@@ -14,30 +14,42 @@ class NhanVienSeeder extends Seeder
      */
     public function run(): void
     {
-        DB::table('tbl_NhanVien')->insert([
+        DB::table('nhan_viens')->insert([
             [
-                'TenNV' => 'Trịnh Hoàng Lộc',
+                'TenNV' => 'Nguyễn Văn A',
                 'GioiTinh' => 1,
-                'NgaySinh' => '2004-04-27',
-                'DiaChi' => '123 Đường ABC, TP.HCM',
-                'SDT' => '0901234567',
-                'TenTK' => 'admin',
-                'MatKhau' => Hash::make('123456'), // Mật khẩu: 123456
-                'Email' => 'admin@hotel.com',
+                'NgaySinh' => '1995-05-10',
+                'DiaChi' => 'An Giang',
+                'SDT' => '0911111111',
+                'TenTK' => 'nva',
+                'MatKhau' => '$2y$12$obUGiKARcGFyKsU9ZN.fQ.OBFylLvfaBSVZED7LOKylAveNcQILda',
+                'Email' => null,
                 'TrangThai' => 1,
                 'MaCV' => 1,
             ],
             [
-                'TenNV' => 'Nguyễn Văn A',
-                'GioiTinh' => 1,
-                'NgaySinh' => '1990-01-01',
-                'DiaChi' => '456 Đường XYZ, Hà Nội',
-                'SDT' => '0987654321',
-                'TenTK' => 'nhanvien1',
-                'MatKhau' => Hash::make('123456'),
-                'Email' => 'nhanvien1@hotel.com',
+                'TenNV' => 'Trần Thị B',
+                'GioiTinh' => 0,
+                'NgaySinh' => '1998-03-15',
+                'DiaChi' => 'Cần Thơ',
+                'SDT' => '0922222222',
+                'TenTK' => 'ttb',
+                'MatKhau' => '$2y$12$obUGiKARcGFyKsU9ZN.fQ.OBFylLvfaBSVZED7LOKylAveNcQILda',
+                'Email' => 'b@gmail.com',
                 'TrangThai' => 1,
                 'MaCV' => 2,
+            ],
+            [
+                'TenNV' => 'Lê Văn C',
+                'GioiTinh' => 1,
+                'NgaySinh' => '1993-07-20',
+                'DiaChi' => 'Đồng Tháp',
+                'SDT' => '0933333333',
+                'TenTK' => 'lvc',
+                'MatKhau' => '$2y$12$obUGiKARcGFyKsU9ZN.fQ.OBFylLvfaBSVZED7LOKylAveNcQILda',
+                'Email' => 'c@gmail.com',
+                'TrangThai' => 1,
+                'MaCV' => 3,
             ],
         ]);
     }

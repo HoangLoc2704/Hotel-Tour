@@ -18,6 +18,15 @@ class DatabaseSeeder extends Seeder
         $this->call([
             ChucVuSeeder::class,
             NhanVienSeeder::class,
+            LoaiPhongSeeder::class,
+            PhongSeeder::class,
+            HuongDanVienSeeder::class,
+            TourSeeder::class,
+            LichKhoiHanhSeeder::class,
+            DichVuSeeder::class,
+            AnhPhongSeeder::class,
+            AnhTourSeeder::class,
+            AnhDichVuSeeder::class,
         ]);
     }
 }
