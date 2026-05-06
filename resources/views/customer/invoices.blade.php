@@ -15,6 +15,14 @@
                     <p>Danh sách hóa đơn tương ứng với tài khoản khách hàng đang đăng nhập.</p>
                 </div>
 
+                @if (session('success'))
+                    <div class="alert alert-success">{{ session('success') }}</div>
+                @endif
+
+                @if (session('error'))
+                    <div class="alert alert-danger">{{ session('error') }}</div>
+                @endif
+
                 @include('customer.partials.profile-card', ['customerProfile' => $customerProfile])
 
                 <form method="GET" action="{{ route('customer.invoices') }}" class="row g-3 mb-4">

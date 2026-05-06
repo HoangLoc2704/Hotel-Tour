@@ -9,6 +9,10 @@
                 <h2 class="mb-3">Đăng nhập khách hàng</h2>
                 <p class="detail-muted">Đăng nhập để theo dõi và sử dụng các dịch vụ dành cho khách hàng.</p>
 
+                @if (session('success'))
+                    <div class="alert alert-success">{{ session('success') }}</div>
+                @endif
+
                 @if ($errors->any())
                     <div class="alert alert-danger">
                         <ul class="mb-0">
