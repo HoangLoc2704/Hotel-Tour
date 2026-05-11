@@ -57,6 +57,9 @@ class CustomerController extends Controller
         $tours = Tour::query()
             ->select(['MaTour', 'TenTour', 'GiaTourNguoiLon', 'DiaDiemKhoiHanh', 'ThoiLuong', 'HinhAnh', 'MoTa'])
             ->where('TrangThai', 1)
+            ->whereHas('lichKhoiHanh', function ($query) {
+                $query->where('NgayKhoiHanh', '>=', Carbon::today());
+            })
             ->orderBy('TenTour')
             ->limit(6)
             ->get();
@@ -127,7 +130,10 @@ class CustomerController extends Controller
 
         $query = Tour::query()
             ->select(['MaTour', 'TenTour', 'GiaTourNguoiLon', 'GiaTourTreEm', 'ThoiLuong', 'DiaDiemKhoiHanh', 'HinhAnh', 'MoTa'])
-            ->where('TrangThai', 1);
+            ->where('TrangThai', 1)
+            ->whereHas('lichKhoiHanh', function ($query) {
+                $query->where('NgayKhoiHanh', '>=', Carbon::today());
+            });
 
         if (!empty($filters['q'])) {
             $query->where('TenTour', 'like', '%' . $filters['q'] . '%');
@@ -1889,6 +1895,7 @@ class CustomerController extends Controller
             ->select(['MaLKH', 'NgayKhoiHanh', 'NgayKetThuc', 'SoChoConLai'])
             ->where('MaTour', $validated['ma_tour'])
             ->where('SoChoConLai', '>', 0)
+            ->where('NgayKhoiHanh', '>=', Carbon::today())
             ->orderBy('NgayKhoiHanh')
             ->get()
             ->map(function ($lkh) use ($tour) {
