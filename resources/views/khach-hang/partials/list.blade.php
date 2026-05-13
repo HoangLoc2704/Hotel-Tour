@@ -18,8 +18,8 @@
             <td>{{ $kh->Email }}</td>
             <td>{{ $kh->TrangThai ? 'Hoạt động' : 'Vô hiệu' }}</td>
             <td>
-                <a href="{{ route('khach-hang.show', $kh->MaKH) }}" class="btn btn-sm btn-info"><i class="bi bi-eye"></i> Xem</a>
-                <a href="{{ route('khach-hang.edit', $kh->MaKH) }}" class="btn btn-sm btn-warning"><i class="bi bi-pencil"></i> Sửa</a>
+                <a href="{{ route('khach-hang.show', $kh->MaKH) }}" class="btn btn-sm btn-danger"><i class="bi bi-eye"></i> Xem</a>
+                <a href="{{ route('khach-hang.edit', $kh->MaKH) }}" class="btn btn-sm btn-danger"><i class="bi bi-pencil"></i> Sửa</a>
                 <form action="{{ route('khach-hang.destroy', $kh->MaKH) }}" method="POST" class="d-inline" onsubmit="return confirm('Xóa khách hàng?')">
                     @csrf
                     @method('DELETE')
