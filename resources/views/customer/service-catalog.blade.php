@@ -101,6 +101,7 @@
                                             <p>{{ (int) ($item->SoLuongNguoi ?? 0) }} người · Loại phòng</p>
                                             <p>{{ \Illuminate\Support\Str::limit($item->MoTa ?: 'Không gian lưu trú thoải mái, phù hợp nghỉ dưỡng ngắn ngày.', 95) }}</p>
                                             <div class="price">{{ number_format($item->GiaPhong ?? 0, 0, ',', '.') }} VND / đêm</div>
+                                            <p> Ghi chú </p>
                                             <a href="{{ route('customer.room-detail', $item->MaLoai) }}" class="detail-link">Xem chi tiết</a>
                                         </div>
                                     </article>
