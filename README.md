@@ -23,4 +23,15 @@ php artisan migrate --seed
 
 # Database & Migrations:
 php artisan db:seed
-# To run this project in your local computer, you need to use Laragon to create a visual host that can enable you to access the website. Then use: php artisan serve, and access to https://127.0.0.1
+# To run this project in your local computer, you need to use Laragon to create a visual host that can enable you to access the website. 
+# Use these line in .env instead if you use a local.
+APP_URL=http://127.0.0.1
+
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=laravel_db
+DB_USERNAME=root
+DB_PASSWORD=
+
+# Then use: php artisan serve, and access to https://127.0.0.1
